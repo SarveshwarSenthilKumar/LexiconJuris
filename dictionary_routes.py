@@ -225,41 +225,61 @@ def search():
         params = []
         
         # Add conditions based on query type
+        search_fields = [
+            'word_phrase',
+            'definition',
+            'example'
+        ]
+        
         if len(keywords) == 1 and ' ' not in query:
             # Single word search - check for exact match, starts with, or contains
+            exact_term = keywords[0]
+            starts_with = f"{exact_term}%"
+            contains = f"%{exact_term}%"
+            
+            # Build conditions for each field
+            field_conditions = []
+            for field in search_fields:
+                field_conditions.append(f"{field} = ?")  # Exact match
+                field_conditions.append(f"{field} LIKE ?")  # Starts with
+                field_conditions.append(f"{field} LIKE ?")  # Contains
+                
+                # Add parameters for each condition
+                params.extend([exact_term, starts_with, contains])
+            
+            # Combine all field conditions with OR
+            search_query += " AND (" + " OR ".join(field_conditions) + ")"
+            
+            # Add ORDER BY with relevance scoring
             search_query += """
-                AND (
-                    word_phrase = ? OR 
-                    word_phrase LIKE ? OR 
-                    definition LIKE ?
-                )
                 ORDER BY 
                     CASE 
                         WHEN word_phrase = ? THEN 1
                         WHEN word_phrase LIKE ? THEN 2
                         ELSE 3
                     END,
+                    LENGTH(word_phrase) ASC,
                     word_phrase ASC
             """
-            exact_term = keywords[0]
-            starts_with = f"{exact_term}%"
-            contains = f"%{exact_term}%"
-            params = [exact_term, starts_with, contains, exact_term, starts_with]
+            # Add parameters for ORDER BY
+            params.extend([exact_term, starts_with])
         else:
-            # Multi-word or phrase search - check for any word in the phrase
+            # Multi-word or phrase search
             search_query += " AND ("
             conditions = []
             
-            # Add exact phrase match
-            conditions.append("(word_phrase = ? OR definition LIKE ?)")
-            params.extend([query, f"%{query}%"])
+            # Add exact phrase match across all fields
+            for field in search_fields:
+                conditions.append(f"{field} = ?")
+                conditions.append(f"{field} LIKE ?")
+                params.extend([query, f"%{query}%"])
             
-            # Add individual word matches
+            # Add individual word matches across all fields
             for keyword in keywords:
                 if len(keyword) > 2:  # Only consider words longer than 2 characters
-                    conditions.append("(word_phrase LIKE ? OR definition LIKE ?)")
-                    contains = f"%{keyword}%"
-                    params.extend([contains, contains])
+                    for field in search_fields:
+                        conditions.append(f"{field} LIKE ?")
+                        params.append(f"%{keyword}%")
             
             search_query += " OR ".join(conditions)
             search_query += """)
