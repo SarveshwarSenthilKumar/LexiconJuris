@@ -203,9 +203,6 @@ def edit_entry(entry_id):
 
 @dict_bp.route('/search')
 def search():
-    if not session.get("name"):
-        return redirect("/auth/login")
-        
     query = request.args.get('q', '').strip()
     if not query:
         return redirect(url_for('dictionary.index'))
@@ -216,46 +213,72 @@ def search():
         # Split query into keywords
         keywords = re.findall(r'\b\w+\b', query.lower())
         
-        # Build the search query with ranking
+        # Base query
         search_query = """
             SELECT id, word_phrase, definition, example, views, 
-                   strftime('%Y-%m-%d', created_at) as created_date,
-                   (
-                       -- Exact match
-                       (CASE WHEN word_phrase = :exact_query THEN 4 ELSE 0 END) +
-                       -- Starts with
-                       (CASE WHEN word_phrase LIKE :starts_with THEN 3 ELSE 0 END) +
-                       -- Contains all keywords
-                       (CASE WHEN """ + " AND ".join(["(word_phrase LIKE ? OR definition LIKE ?)" for _ in keywords]) + """ THEN 2 ELSE 0 END) +
-                       -- Contains any keyword
-                       (CASE WHEN """ + " OR ".join(["(word_phrase LIKE ? OR definition LIKE ?)" for _ in keywords]) + """ THEN 1 ELSE 0 END)
-                   ) as relevance
+                   strftime('%Y-%m-%d', created_at) as created_date
             FROM entries
             WHERE 1=1
         """
         
-        # Add search conditions
-        params = {
-            'exact_query': query,
-            'starts_with': f"{query}%"
-        }
+        # Start with empty params list
+        params = []
         
-        # Add parameters for each keyword (twice - once for word_phrase, once for definition)
-        for kw in keywords:
-            params[f'kw_{kw}'] = f'%{kw}%'
-            params[f'kw_def_{kw}'] = f'%{kw}%'
+        # Add conditions based on query type
+        if len(keywords) == 1 and ' ' not in query:
+            # Single word search - check for exact match, starts with, or contains
+            search_query += """
+                AND (
+                    word_phrase = ? OR 
+                    word_phrase LIKE ? OR 
+                    definition LIKE ?
+                )
+                ORDER BY 
+                    CASE 
+                        WHEN word_phrase = ? THEN 1
+                        WHEN word_phrase LIKE ? THEN 2
+                        ELSE 3
+                    END,
+                    word_phrase ASC
+            """
+            exact_term = keywords[0]
+            starts_with = f"{exact_term}%"
+            contains = f"%{exact_term}%"
+            params = [exact_term, starts_with, contains, exact_term, starts_with]
+        else:
+            # Multi-word or phrase search - check for any word in the phrase
+            search_query += " AND ("
+            conditions = []
+            
+            # Add exact phrase match
+            conditions.append("(word_phrase = ? OR definition LIKE ?)")
+            params.extend([query, f"%{query}%"])
+            
+            # Add individual word matches
+            for keyword in keywords:
+                if len(keyword) > 2:  # Only consider words longer than 2 characters
+                    conditions.append("(word_phrase LIKE ? OR definition LIKE ?)")
+                    contains = f"%{keyword}%"
+                    params.extend([contains, contains])
+            
+            search_query += " OR ".join(conditions)
+            search_query += """)
+                ORDER BY 
+                    CASE 
+                        WHEN word_phrase = ? THEN 1
+                        WHEN word_phrase LIKE ? THEN 2
+                        ELSE 3
+                    END,
+                    LENGTH(word_phrase) ASC,
+                    word_phrase ASC
+            """
+            params.extend([query, f"{query}%"])
         
-        # Add ORDER BY and LIMIT
-        search_query += """
-            ORDER BY relevance DESC, word_phrase ASC
-            LIMIT 50
-        """
+        # Add limit
+        search_query += " LIMIT 50"
         
-        # Execute the query with all parameters
-        entries = db.execute(search_query, 
-                           exact_query=query,
-                           starts_with=f"{query}%",
-                           **{k: v for k, v in params.items() if k.startswith('kw_')})
+        # Execute the query
+        entries = db.execute(search_query, *params)
         
         return render_template('dictionary/search.html', 
                              entries=entries, 
