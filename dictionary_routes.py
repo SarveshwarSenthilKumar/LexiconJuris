@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort
 from sql import SQL
 import sqlite3
 from datetime import datetime
@@ -148,6 +148,60 @@ def view_entry(entry_id):
         current_app.logger.error(f"Error viewing entry {entry_id}: {str(e)}")
         flash('An error occurred while loading the entry', 'error')
         return redirect(url_for('dictionary.index'))
+
+@dict_bp.route('/entry/<int:entry_id>/edit', methods=['GET', 'POST'])
+def edit_entry(entry_id):
+    if not session.get("name"):
+        return redirect("/auth/login")
+        
+    db = SQL("sqlite:///dictionary.db")
+    
+    # Get the existing entry
+    entry = db.execute("""
+        SELECT id, word_phrase, definition, example 
+        FROM entries 
+        WHERE id = :id
+    """, id=entry_id)
+    
+    if not entry:
+        flash('Entry not found', 'error')
+        return redirect(url_for('dictionary.index'))
+        
+    entry = entry[0]
+    
+    if request.method == 'POST':
+        try:
+            word_phrase = request.form.get('word_phrase', '').strip()
+            definition = request.form.get('definition', '').strip()
+            example = request.form.get('example', '').strip()
+            
+            if not word_phrase or not definition:
+                flash('Word/phrase and definition are required', 'error')
+                return redirect(url_for('dictionary.edit_entry', entry_id=entry_id))
+            
+            # Update the entry
+            db.execute("""
+                UPDATE entries 
+                SET word_phrase = :word_phrase,
+                    definition = :definition,
+                    example = :example,
+                    last_updated = CURRENT_TIMESTAMP
+                WHERE id = :id
+            """, 
+            word_phrase=word_phrase,
+            definition=definition,
+            example=example if example else None,
+            id=entry_id)
+            
+            flash('Entry updated successfully!', 'success')
+            return redirect(url_for('dictionary.view_entry', entry_id=entry_id))
+            
+        except Exception as e:
+            current_app.logger.error(f"Error updating entry {entry_id}: {str(e)}")
+            flash('An error occurred while updating the entry', 'error')
+            return redirect(url_for('dictionary.edit_entry', entry_id=entry_id))
+    
+    return render_template('dictionary/edit.html', entry=entry)
 
 @dict_bp.route('/search')
 def search():
