@@ -17,28 +17,28 @@ Appellant - Done
 Statute - Done
 
 Sep 10 Words:
-Jurisprudence
-Justice
-Equity 
-Equality
-Bias
+Jurisprudence - Done
+Justice - Done
+Equity - Done
+Equality - Done
+Bias - Done
 
 Latin Words:
-Actus Reus
-Caveat emptor
-Curia Regis
-Factum
-Habeas Corpus
-In Camera
-Intra Vires / Ultra Vires
-Magna Carta
-Mens rea
-Non est Factum
-Prima Facie
-Res ipsa Loquitor
-Stare Decisis
-Trial de Novo
-Voir dire
-Res Judicata
-Rex & Regina (R)
-Ratio Decidendi
+Actus Reus - Done
+Caveat emptor - Done
+Curia Regis - Done
+Factum - Done
+Habeas Corpus - Done
+In Camera - Done
+Intra Vires / Ultra Vires - Done
+Magna Carta - Done
+Mens rea - Done
+Non est Factum - Done
+Prima Facie - Done
+Res ipsa Loquitor - Done
+Stare Decisis - Done
+Trial de Novo - Done
+Voir dire - Done
+Res Judicata - Done
+Rex & Regina (R) - Done
+Ratio Decidendi - Done
