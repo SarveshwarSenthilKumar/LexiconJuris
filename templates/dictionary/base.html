@@ -80,8 +80,10 @@
                 <a href="{{ url_for('dictionary.index') }}" class="logo">Law Notes</a>
                 <nav class="nav-links">
                     <a href="{{ url_for('dictionary.index') }}" class="nav-link">Dictionary</a>
+                    {% if session.get("name") %}
                     <a href="{{ url_for('dictionary.add_entry') }}" class="nav-link">Add Entry</a>
                     <a href="/auth/logout" class="nav-link">Logout</a>
+                    {% endif %}
                 </nav>
             </div>
         </div>

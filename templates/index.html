@@ -3,51 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Development Template</title>
+    <title>Law Notes</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #282c34;
-            color: white;
+            background-color: #0a192f;
+            color: #e6f1ff;
             text-align: center;
             flex-direction: column;
+            padding: 20px;
         }
         .header {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #00f0ff;
+            font-family: 'Orbitron', sans-serif;
         }
         .subtext {
             font-size: 1.2rem;
-            opacity: 0.8;
-            margin-bottom: 20px;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            line-height: 1.6;
         }
-        .login-button {
-            background-color: transparent;
-            color: #61dafb;
-            border: 2px solid #61dafb;
+        .redirect-message {
             font-size: 1rem;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s, color 0.3s;
-        }
-        .login-button:hover {
-            background-color: #61dafb;
-            color: black;
+            opacity: 0.7;
+            margin-top: 2rem;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="header">Welcome to the Flask Development Template</div>
-    <div class="subtext">Created by Sarveshwar Senthil Kumar</div>
-    {% if authentication == True %}
-    <button class="login-button" onclick="location.href='/auth/login'">Login to Access</button>
-    {% endif %}
+    <div>
+        <div class="header">Law Notes</div>
+        <div class="subtext">
+            Your personal legal dictionary and note-taking application. Keep track of legal terms, definitions, 
+            and examples all in one place.
+        </div>
+        <div class="redirect-message">
+            Redirecting you to the dictionary...
+        </div>
+    </div>
+    <script>
+        // Redirect to dictionary after a short delay
+        setTimeout(function() {
+            window.location.href = '/dictionary';
+        }, 1000);
+    </script>
 </body>
 </html>

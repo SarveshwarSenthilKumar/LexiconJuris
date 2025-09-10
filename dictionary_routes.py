@@ -62,8 +62,6 @@ def get_related_terms(word_phrase, current_id=None, limit=5):
 
 @dict_bp.route('')
 def index():
-    if not session.get("name"):
-        return redirect("/auth/login")
     
     db = SQL("sqlite:///dictionary.db")
     entries = db.execute("""

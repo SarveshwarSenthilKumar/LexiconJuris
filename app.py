@@ -28,16 +28,10 @@ autoRun = True  # Set to True to run the server automatically when app.py is exe
 port = 5000  # Change to any available port
 authentication = True  # Set to False to disable authentication
 
-# This route is the base route which renders the index.html file
-@app.route("/", methods=["GET", "POST"])
+# This route always redirects to the dictionary
+@app.route("/", methods=["GET"])
 def index():
-    if not authentication:
-        return redirect(url_for('dictionary.index'))
-    else:
-        if not session.get("name"):
-            return render_template("index.html", authentication=True)
-        else:
-            return redirect(url_for('dictionary.index'))
+    return redirect(url_for('dictionary.index'))
 
 if autoRun:
     if __name__ == '__main__':
