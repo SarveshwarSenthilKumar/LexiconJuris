@@ -1,3 +1,1 @@
-Create main viewing for users
-Implement search feature properly
 Add note logs to track what is done each day
