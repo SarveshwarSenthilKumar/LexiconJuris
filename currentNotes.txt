@@ -2,15 +2,16 @@ Sep 9 Words:
 Actus Reus - Done
 Mens rea - Done
 Voir dire - Done
-Object standard
-Ratio Decidecis
-Subjective standard
-Judgment/Judicial reasoning
-Obiter Dictum
-Specific Intent
-Respondent
-Style of Cause
-Sovereignty
-Stare Decisis
-Appellant
-Statute
+Object standard - Done
+Ratio Decidecis - Done
+Subjective standard - Done
+Judgment/Judicial reasoning - Done
+Obiter Dictum - Done
+Specific Intent - Done
+General Intent - Done
+Respondent - Done
+Style of Cause - Done
+Sovereignty - Done
+Stare Decisis - Done
+Appellant - Done
+Statute - Done
