@@ -119,20 +119,35 @@ def add_entry():
         word_phrase = request.form.get('word_phrase', '').strip()
         definition = request.form.get('definition', '').strip()
         example = request.form.get('example', '').strip()
+        unit_number = request.form.get('unit_number', '').strip()
+        comments = request.form.get('comments', '').strip()
         
         if not word_phrase or not definition:
             flash('Word/Phrase and Definition are required', 'error')
             return render_template('dictionary/add.html', 
                                 word_phrase=word_phrase,
                                 definition=definition,
-                                example=example)
+                                example=example,
+                                unit_number=unit_number,
+                                comments=comments)
+        
+        # Convert unit_number to int if provided, otherwise set to None
+        try:
+            unit_number = int(unit_number) if unit_number else None
+        except (ValueError, TypeError):
+            unit_number = None
         
         try:
             db = SQL("sqlite:///dictionary.db")
             db.execute("""
-                INSERT INTO entries (word_phrase, definition, example)
-                VALUES (:word_phrase, :definition, :example)
-            """, word_phrase=word_phrase, definition=definition, example=example)
+                INSERT INTO entries (word_phrase, definition, example, unit_number, comments)
+                VALUES (:word_phrase, :definition, :example, :unit_number, :comments)
+            """, 
+            word_phrase=word_phrase, 
+            definition=definition, 
+            example=example if example else None,
+            unit_number=unit_number,
+            comments=comments if comments else None)
             
             flash('Entry added successfully!', 'success')
             return redirect(url_for('dictionary.index'))

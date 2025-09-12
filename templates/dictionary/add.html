@@ -20,11 +20,28 @@
                     <textarea id="definition" name="definition" class="form-control" rows="4" required>{{ definition if definition }}</textarea>
                 </div>
                 
-                <div style="margin-bottom: 2rem;">
+                <div style="margin-bottom: 1.5rem;">
                     <label for="example" class="form-label">Example Usage (Optional)</label>
                     <textarea id="example" name="example" class="form-control" rows="3">{{ example if example }}</textarea>
                     <small style="color: #8892b0; font-size: 0.9rem;">
                         Provide an example sentence showing how this word/phrase is used in context.
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="unit_number" class="form-label">Unit Number (Optional)</label>
+                    <input type="number" id="unit_number" name="unit_number" class="form-control" 
+                           value="{{ unit_number if unit_number }}" min="1" step="1">
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        The unit number this term is associated with (e.g., 1, 2, 3, etc.)
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label for="comments" class="form-label">Additional Comments (Optional)</label>
+                    <textarea id="comments" name="comments" class="form-control" rows="3">{{ comments if comments }}</textarea>
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        Any additional notes or context about this term.
                     </small>
                 </div>
                 

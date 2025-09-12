@@ -1,5 +1,5 @@
 Add note logs to track what is done each day
-Add delete entry feature
+Remove sarveshwar flask template shout or login shout
 Add notes feature
 add test feature
 add a unit distinguisher for unit tests
