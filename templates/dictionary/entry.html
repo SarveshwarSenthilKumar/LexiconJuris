@@ -85,6 +85,24 @@ function confirmDelete(entryId) {
                 </div>
             </div>
             {% endif %}
+
+            {% if entry.unit_number %}
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 0.5rem; font-size: 1.2rem;">Unit Number</h3>
+                <div style="color: #e6f1ff;">
+                    {{ entry.unit_number }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if entry.comments %}
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 0.5rem; font-size: 1.2rem;">Additional Comments</h3>
+                <div style="color: #e6f1ff; line-height: 1.6;">
+                    {{ entry.comments|replace('\n', '<br>')|safe }}
+                </div>
+            </div>
+            {% endif %}
             
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #5d6880;">
                 <div>

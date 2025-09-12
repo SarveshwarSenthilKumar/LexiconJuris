@@ -32,12 +32,29 @@
                               class="form-control" required>{{ entry.definition }}</textarea>
                 </div>
                 
-                <div style="margin-bottom: 2rem;">
+                <div style="margin-bottom: 1.5rem;">
                     <label for="example" style="display: block; margin-bottom: 0.5rem; color: var(--primary);">
                         Example (Optional)
                     </label>
                     <textarea id="example" name="example" rows="4" 
                               class="form-control">{{ entry.example or '' }}</textarea>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="unit_number" style="display: block; margin-bottom: 0.5rem; color: var(--primary);">
+                        Unit Number (Optional)
+                    </label>
+                    <input type="number" id="unit_number" name="unit_number" 
+                           value="{{ entry.unit_number or '' }}" 
+                           class="form-control" min="1" step="1">
+                </div>
+                
+                <div style="margin-bottom: 2rem;">
+                    <label for="comments" style="display: block; margin-bottom: 0.5rem; color: var(--primary);">
+                        Additional Comments (Optional)
+                    </label>
+                    <textarea id="comments" name="comments" rows="4" 
+                              class="form-control">{{ entry.comments or '' }}</textarea>
                 </div>
                 
                 <div style="display: flex; gap: 1rem;">

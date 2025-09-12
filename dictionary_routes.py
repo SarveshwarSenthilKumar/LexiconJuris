@@ -17,9 +17,9 @@ def render_entry(entry_id, is_public=False):
                 WHERE id = :id
             """, id=entry_id)
         
-        # Get the entry
+        # Get the entry with all fields
         entry = db.execute("""
-            SELECT id, word_phrase, definition, example, views, 
+            SELECT id, word_phrase, definition, example, views, unit_number, comments,
                    strftime('%Y-%m-%d', created_at) as created_date,
                    strftime('%Y-%m-%d', last_updated) as last_updated
             FROM entries 
@@ -165,9 +165,9 @@ def edit_entry(entry_id):
         
     db = SQL("sqlite:///dictionary.db")
     
-    # Get the existing entry
+    # Get the existing entry with all fields
     entry = db.execute("""
-        SELECT id, word_phrase, definition, example 
+        SELECT id, word_phrase, definition, example, unit_number, comments
         FROM entries 
         WHERE id = :id
     """, id=entry_id)
@@ -183,10 +183,18 @@ def edit_entry(entry_id):
             word_phrase = request.form.get('word_phrase', '').strip()
             definition = request.form.get('definition', '').strip()
             example = request.form.get('example', '').strip()
+            unit_number = request.form.get('unit_number', '').strip()
+            comments = request.form.get('comments', '').strip()
             
             if not word_phrase or not definition:
                 flash('Word/phrase and definition are required', 'error')
                 return redirect(url_for('dictionary.edit_entry', entry_id=entry_id))
+            
+            # Convert unit_number to int if provided, otherwise set to None
+            try:
+                unit_number = int(unit_number) if unit_number else None
+            except (ValueError, TypeError):
+                unit_number = None
             
             # Update the entry
             db.execute("""
@@ -194,10 +202,14 @@ def edit_entry(entry_id):
                 SET word_phrase = :word_phrase,
                     definition = :definition,
                     example = :example,
+                    unit_number = :unit_number,
+                    comments = :comments,
                     last_updated = CURRENT_TIMESTAMP
                 WHERE id = :id
             """, 
             word_phrase=word_phrase,
+            unit_number=unit_number,
+            comments=comments if comments else None,
             definition=definition,
             example=example if example else None,
             id=entry_id)
