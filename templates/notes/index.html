@@ -1,0 +1,71 @@
+{% extends "notes/base.html" %}
+
+{% block title %}My Notes{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="color: var(--primary); margin: 0;">
+            My Notes
+        </h1>
+        <a href="{{ url_for('notes.add_note') }}" class="btn" style="background: var(--primary); color: #000; text-decoration: none;">
+            + New Note
+        </a>
+    </div>
+    
+    {% if not notes_by_unit %}
+        <div class="card" style="background: rgba(10, 25, 47, 0.7); padding: 2rem; text-align: center;">
+            <p style="color: #8892b0; margin: 0;">
+                You don't have any notes yet. <a href="{{ url_for('notes.add_note') }}" style="color: var(--primary);">Create your first note</a> to get started.
+            </p>
+        </div>
+    {% else %}
+        {% for unit, notes in notes_by_unit.items() %}
+            <h2 class="unit-header">
+                {% if unit %}
+                    Unit {{ unit }}
+                {% else %}
+                    General Notes
+                {% endif %}
+            </h2>
+            
+            <div class="notes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                {% for note in notes %}
+                    <div class="note-card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <h3 class="note-title">
+                                {% if note.is_favorite %}<span class="favorite">★</span> {% endif %}
+                                {{ note.title }}
+                            </h3>
+                            <span class="note-date" style="color: #8892b0; font-size: 0.85rem;">
+                                {{ note.last_updated or note.created_date }}
+                            </span>
+                        </div>
+                        
+                        <div class="note-meta">
+                            {% if note.unit_number %}
+                                <span>Unit {{ note.unit_number }}</span>
+                            {% else %}
+                                <span>No unit</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="note-content" style="max-height: 200px; overflow: hidden; text-overflow: ellipsis;">
+                            {{ note.content|truncate(200) }}
+                        </div>
+                        
+                        <div class="note-actions">
+                            <a href="{{ url_for('notes.view_note', note_id=note.id) }}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                View
+                            </a>
+                            <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; background: transparent; border: 1px solid var(--primary);">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}
