@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort, jsonify
 from sql import SQL
 import sqlite3
 from datetime import datetime
@@ -200,6 +200,33 @@ def edit_entry(entry_id):
             return redirect(url_for('dictionary.edit_entry', entry_id=entry_id))
     
     return render_template('dictionary/edit.html', entry=entry)
+
+@dict_bp.route('/entry/<int:entry_id>/delete', methods=['POST'])
+def delete_entry(entry_id):
+    """Delete an entry"""
+    # Check if user is logged in using the same session variable as other routes
+    if not session.get('name'):
+        return jsonify({'success': False, 'error': 'Not authorized. Please log in.'}), 401
+    
+    try:
+        db = SQL("sqlite:///dictionary.db")
+        
+        # Verify the entry exists
+        entry = db.execute("SELECT * FROM entries WHERE id = ?", entry_id)
+        if not entry:
+            return jsonify({'success': False, 'error': 'Entry not found'}), 404
+            
+        # Note: If you want to verify entry ownership, uncomment and modify this section
+        # if entry[0].get('user_id') != session.get('user_id'):
+        #     return jsonify({'success': False, 'error': 'Not authorized to delete this entry'}), 403
+            
+        # Delete the entry
+        db.execute("DELETE FROM entries WHERE id = ?", entry_id)
+        
+        return jsonify({'success': True, 'message': 'Entry deleted successfully'})
+    except Exception as e:
+        print(f"Error deleting entry: {str(e)}")  # Log the error for debugging
+        return jsonify({'success': False, 'error': 'An error occurred while deleting the entry'}), 500
 
 @dict_bp.route('/search')
 def search():

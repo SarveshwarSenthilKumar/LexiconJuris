@@ -2,6 +2,40 @@
 
 {% block title %}{{ entry.word_phrase }} - Law Notes{% endblock %}
 
+{% block extra_js %}
+<script>
+function confirmDelete(entryId) {
+    if (confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+        fetch(`/dictionary/entry/${entryId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{{ url_for('dictionary.index') }}";
+            } else {
+                alert('Error: ' + (data.error || 'Failed to delete entry'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the entry: ' + (error.error || 'Please try again.'));
+        });
+    }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container" style="max-width: 800px; margin: 0 auto;">
     <div style="margin-bottom: 2rem;">
@@ -21,6 +55,9 @@
                     <a href="{{ url_for('dictionary.edit_entry', entry_id=entry.id) }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
                         Edit
                     </a>
+                    <button onclick="confirmDelete({{ entry.id }})" class="btn" style="background: transparent; border: 1px solid #ff4444; color: #ff4444;">
+                        Delete
+                    </button>
                 </div>
             </div>
             
