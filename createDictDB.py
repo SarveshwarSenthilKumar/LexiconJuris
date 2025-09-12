@@ -19,7 +19,9 @@ CREATE TABLE entries (
     example TEXT,
     views INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    unit_number INTEGER,
+    comments TEXT
 )
 """
 
