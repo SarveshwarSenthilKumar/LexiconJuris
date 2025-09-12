@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort
 from sql import SQL
 import sqlite3
 from datetime import datetime
+import re
 
 # Initialize Blueprint
 notes_bp = Blueprint('notes', __name__, url_prefix='/notes')
@@ -92,6 +93,141 @@ def add_note():
                                 is_favorite=is_favorite)
     
     return render_template('notes/add.html')
+
+@notes_bp.route('/edit/<int:note_id>', methods=['GET', 'POST'])
+def edit_note(note_id):
+    """Edit an existing note"""
+    if not session.get("name"):
+        return redirect("/auth/login")
+    
+    db = SQL("sqlite:///notes.db")
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        unit_number = request.form.get('unit_number')
+        tags = request.form.get('tags')
+        related_entries = request.form.get('related_entries')
+        comments = request.form.get('comments')
+        is_favorite = 1 if request.form.get('is_favorite') else 0
+        
+        db.execute("""
+            UPDATE notes 
+            SET title = :title,
+                content = :content,
+                unit_number = :unit_number,
+                tags = :tags,
+                related_entries = :related_entries,
+                comments = :comments,
+                is_favorite = :is_favorite,
+                last_updated = CURRENT_TIMESTAMP
+            WHERE id = :id
+        """, id=note_id, title=title, content=content, unit_number=unit_number,
+           tags=tags, related_entries=related_entries, comments=comments, 
+           is_favorite=is_favorite)
+        
+        flash('Note updated successfully!', 'success')
+        return redirect(url_for('notes.view_note', note_id=note_id))
+    
+    # GET request - show edit form
+    note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
+    if not note:
+        abort(404)
+    
+    return render_template('notes/add.html', note=note[0])
+
+@notes_bp.route('/<int:note_id>')
+def view_note(note_id):
+    """View a specific note"""
+    if not session.get("name"):
+        return redirect("/auth/login")
+    
+    db = SQL("sqlite:///notes.db")
+    
+    # Get the note
+    note = db.execute("""
+        SELECT *,
+               strftime('%Y-%m-%d', created_at) as created_date,
+               strftime('%Y-%m-%d', last_updated) as last_updated
+        FROM notes 
+        WHERE id = :id
+    """, id=note_id)
+    
+    if not note:
+        abort(404)
+    
+    note = note[0]
+    
+    # Increment view count
+    db.execute("""
+        UPDATE notes 
+        SET views = COALESCE(views, 0) + 1 
+        WHERE id = :id
+    """, id=note_id)
+    
+    # Parse content for markdown-like formatting
+    content = note['content']
+    
+    # Convert markdown headers to HTML
+    content = re.sub(r'^# (.*?)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
+    content = re.sub(r'^## (.*?)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
+    content = re.sub(r'^### (.*?)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
+    
+    # Convert bold and italic
+    content = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', content)
+    content = re.sub(r'\*(.*?)\*', r'<em>\1</em>', content)
+    
+    # Convert lists
+    content = re.sub(r'^\s*[-*] (.*?)$', r'<li>\1</li>', content, flags=re.MULTILINE)
+    content = re.sub(r'(<li>.*</li>)', r'<ul>\1</ul>', content, flags=re.DOTALL)
+    
+    # Convert blockquotes
+    content = re.sub(r'^> (.*?)$', r'<blockquote>\1</blockquote>', content, flags=re.MULTILINE)
+    
+    # Convert line breaks to <br> tags
+    content = content.replace('\n', '<br>')
+    
+    # Handle asides (Notion-style callouts)
+    content = re.sub(
+        r'<aside>\s*💡\s*(.*?)\s*</aside>', 
+        r'<div class="callout"><div class="callout-emoji">💡</div><div class="callout-content">\1</div></div>', 
+        content, 
+        flags=re.DOTALL
+    )
+    
+    # Split content into sections based on headers
+    sections = re.split(r'(<h[1-3]>.*?</h[1-3]>)', content)
+    
+    # Process each section to ensure proper HTML structure
+    processed_sections = []
+    for i, section in enumerate(sections):
+        if section.startswith('<h'):
+            # This is a header, add it to the processed sections
+            processed_sections.append(section)
+        elif section.strip():
+            # This is content, wrap it in a paragraph if it's not already in a block element
+            if not any(tag in section for tag in ['<p>', '<ul>', '<ol>', '<blockquote>', '<div class="callout">']):
+                section = f'<p>{section}</p>'
+            processed_sections.append(section)
+    
+    # Join the sections back together
+    processed_content = '\n'.join(processed_sections)
+    
+    # Get related entries if any
+    related_entries = []
+    if note.get('related_entries'):
+        entry_ids = [int(id_str.strip()) for id_str in note['related_entries'].split(',') if id_str.strip().isdigit()]
+        if entry_ids:
+            related_entries = db.execute("""
+                SELECT id, word_phrase 
+                FROM dictionary.entries 
+                WHERE id IN ({})
+            """.format(','.join('?' * len(entry_ids))), *entry_ids)
+    
+    return render_template('notes/view.html', 
+                         note=note, 
+                         content=processed_content,
+                         related_entries=related_entries)
 
 def init_app(app):
     app.register_blueprint(notes_bp)

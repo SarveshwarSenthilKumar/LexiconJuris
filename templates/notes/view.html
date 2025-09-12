@@ -1,0 +1,206 @@
+{% extends "notes/base.html" %}
+
+{% block title %}{{ note.title }} - Notes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .note-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    
+    .note-title {
+        color: var(--primary);
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .note-meta {
+        display: flex;
+        gap: 1.5rem;
+        color: #8892b0;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .note-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #e6f1ff;
+    }
+    
+    .note-content h1, 
+    .note-content h2, 
+    .note-content h3, 
+    .note-content h4, 
+    .note-content h5, 
+    .note-content h6 {
+        color: var(--primary);
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .note-content h1 { font-size: 1.8rem; }
+    .note-content h2 { font-size: 1.6rem; }
+    .note-content h3 { font-size: 1.4rem; }
+    
+    .note-content p {
+        margin: 1.5rem 0;
+    }
+    
+    .note-content ul, 
+    .note-content ol {
+        margin: 1.5rem 0;
+        padding-left: 2rem;
+    }
+    
+    .note-content li {
+        margin: 0.5rem 0;
+    }
+    
+    .note-content blockquote {
+        border-left: 3px solid var(--primary);
+        padding: 0.5rem 0 0.5rem 1rem;
+        margin: 1.5rem 0;
+        color: #a8b2d1;
+        font-style: italic;
+    }
+    
+    .callout {
+        background: rgba(0, 240, 255, 0.1);
+        border-radius: 6px;
+        padding: 1rem;
+        margin: 1.5rem 0;
+        display: flex;
+        gap: 1rem;
+        border-left: 3px solid var(--primary);
+    }
+    
+    .callout-emoji {
+        font-size: 1.2rem;
+        margin-top: 0.2rem;
+    }
+    
+    .callout-content {
+        flex: 1;
+    }
+    
+    .related-entries {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    
+    .tag {
+        display: inline-block;
+        background: rgba(0, 240, 255, 0.1);
+        color: var(--primary);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .related-entry {
+        display: inline-block;
+        background: rgba(0, 240, 255, 0.1);
+        color: #e6f1ff;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        margin-right: 0.75rem;
+        margin-bottom: 0.75rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .related-entry:hover {
+        background: rgba(0, 240, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    
+    .favorite {
+        color: #ffd700;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 1rem;">
+        <a href="{{ url_for('notes.index') }}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; margin-bottom: 1rem;">
+            ← Back to Notes
+        </a>
+    </div>
+    
+    <article class="note">
+        <header class="note-header">
+            <h1 class="note-title">
+                {% if note.is_favorite %}<span class="favorite">★</span>{% endif %}
+                {{ note.title }}
+            </h1>
+            
+            <div class="note-meta">
+                {% if note.unit_number %}
+                <span>Unit {{ note.unit_number }}</span>
+                {% endif %}
+                <span>Created: {{ note.created_date }}</span>
+                <span>Last updated: {{ note.last_updated }}</span>
+                <span>Views: {{ note.views or 0 }}</span>
+            </div>
+            
+            {% if note.tags %}
+            <div class="note-tags" style="margin-top: 1rem;">
+                {% for tag in note.tags.split(',') %}
+                    <span class="tag">{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </header>
+        
+        <div class="note-content">
+            {{ content|safe }}
+        </div>
+        
+        {% if note.comments %}
+        <div class="note-comments" style="margin-top: 3rem; padding: 1.5rem; background: rgba(10, 25, 47, 0.5); border-radius: 6px;">
+            <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 1rem;">Your Comments</h3>
+            <p style="margin: 0; color: #a8b2d1;">{{ note.comments|replace('\n', '<br>')|safe }}</p>
+        </div>
+        {% endif %}
+        
+        {% if related_entries %}
+        <div class="related-entries">
+            <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 1rem;">Related Dictionary Entries</h3>
+            <div>
+                {% for entry in related_entries %}
+                    <a href="{{ url_for('dictionary.view_entry', entry_id=entry.id) }}" class="related-entry">
+                        {{ entry.word_phrase }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="actions">
+            <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn" style="background: var(--primary); color: #000;">
+                Edit Note
+            </a>
+            <a href="{{ url_for('notes.index') }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
+                Back to Notes
+            </a>
+        </div>
+    </article>
+</div>
+{% endblock %}
