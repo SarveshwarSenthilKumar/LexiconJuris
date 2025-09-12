@@ -2,6 +2,6 @@ Add note logs to track what is done each day
 Remove sarveshwar flask template shout or login shout
 Add notes feature
 add test feature
-add a unit distinguisher for unit tests
+add a unit distinguisher for unit tests, search by unit
 add an ai created example feature
 add a slot for images of worksheets
