@@ -2,6 +2,7 @@
 
 {% block title %}{{ entry.word_phrase }} - Law Notes{% endblock %}
 
+{% if not is_public %}
 {% block extra_js %}
 <script>
 function confirmDelete(entryId) {
@@ -35,6 +36,7 @@ function confirmDelete(entryId) {
 }
 </script>
 {% endblock %}
+{% endif %}
 
 {% block content %}
 <div class="container" style="max-width: 800px; margin: 0 auto;">
@@ -49,6 +51,7 @@ function confirmDelete(entryId) {
                     {{ entry.word_phrase }}
                 </h1>
                 <div style="display: flex; gap: 1rem;">
+                    {% if not is_public %}
                     <a href="{{ url_for('dictionary.add_entry') }}" class="btn" style="background: var(--primary); color: #000;">
                         + Add New
                     </a>
@@ -58,6 +61,11 @@ function confirmDelete(entryId) {
                     <button onclick="confirmDelete({{ entry.id }})" class="btn" style="background: transparent; border: 1px solid #ff4444; color: #ff4444;">
                         Delete
                     </button>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn" style="background: var(--primary); color: #000;">
+                        Login to Edit
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             

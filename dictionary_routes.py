@@ -4,6 +4,44 @@ import sqlite3
 from datetime import datetime
 import re
 
+def render_entry(entry_id, is_public=False):
+    """Helper function to render an entry (used by both public and authenticated views)"""
+    db = SQL("sqlite:///dictionary.db")
+    
+    try:
+        # Increment view count only for public views
+        if is_public:
+            db.execute("""
+                UPDATE entries 
+                SET views = COALESCE(views, 0) + 1 
+                WHERE id = :id
+            """, id=entry_id)
+        
+        # Get the entry
+        entry = db.execute("""
+            SELECT id, word_phrase, definition, example, views, 
+                   strftime('%Y-%m-%d', created_at) as created_date,
+                   strftime('%Y-%m-%d', last_updated) as last_updated
+            FROM entries 
+            WHERE id = :id
+        """, id=entry_id)
+        
+        if not entry:
+            flash('Entry not found', 'error')
+            return redirect(url_for('dictionary.index'))
+            
+        # Get related terms
+        related_terms = get_related_terms(entry[0]['word_phrase'], entry_id)
+        
+        return render_template('dictionary/entry.html', 
+                            entry=entry[0], 
+                            related_terms=related_terms,
+                            is_public=is_public)
+    except Exception as e:
+        current_app.logger.error(f"Error in render_entry for entry {entry_id}: {str(e)}")
+        flash('An error occurred while loading the entry', 'error')
+        return redirect(url_for('dictionary.index'))
+
 # Initialize Blueprint
 dict_bp = Blueprint('dictionary', __name__, url_prefix='/dictionary')
 
@@ -108,44 +146,17 @@ def add_entry():
     
     return render_template('dictionary/add.html')
 
+@dict_bp.route('/public/entry/<int:entry_id>')
+def public_view_entry(entry_id):
+    """Public view of an entry (no authentication required)"""
+    return render_entry(entry_id, is_public=True)
+
 @dict_bp.route('/entry/<int:entry_id>')
 def view_entry(entry_id):
+    """Authenticated view of an entry (with edit/delete controls)"""
     if not session.get("name"):
-        return redirect("/auth/login")
-        
-    db = SQL("sqlite:///dictionary.db")
-    
-    try:
-        # Increment view count
-        db.execute("""
-            UPDATE entries 
-            SET views = COALESCE(views, 0) + 1 
-            WHERE id = :id
-        """, id=entry_id)
-        
-        # Get the entry
-        entry = db.execute("""
-            SELECT id, word_phrase, definition, example, views, 
-                   strftime('%Y-%m-%d', created_at) as created_date,
-                   strftime('%Y-%m-%d', last_updated) as last_updated
-            FROM entries 
-            WHERE id = :id
-        """, id=entry_id)
-        
-        if not entry:
-            flash('Entry not found', 'error')
-            return redirect(url_for('dictionary.index'))
-            
-        # Get related terms
-        related_terms = get_related_terms(entry[0]['word_phrase'], entry_id)
-        
-        return render_template('dictionary/entry.html', 
-                             entry=entry[0], 
-                             related_terms=related_terms)
-    except Exception as e:
-        current_app.logger.error(f"Error viewing entry {entry_id}: {str(e)}")
-        flash('An error occurred while loading the entry', 'error')
-        return redirect(url_for('dictionary.index'))
+        return redirect(url_for('dictionary.public_view_entry', entry_id=entry_id))
+    return render_entry(entry_id, is_public=False)
 
 @dict_bp.route('/entry/<int:entry_id>/edit', methods=['GET', 'POST'])
 def edit_entry(entry_id):
