@@ -102,39 +102,79 @@ def edit_note(note_id):
     
     db = SQL("sqlite:///notes.db")
     
-    if request.method == 'POST':
-        title = request.form.get('title')
-        content = request.form.get('content')
-        unit_number = request.form.get('unit_number')
-        tags = request.form.get('tags')
-        related_entries = request.form.get('related_entries')
-        comments = request.form.get('comments')
-        is_favorite = 1 if request.form.get('is_favorite') else 0
-        
-        db.execute("""
-            UPDATE notes 
-            SET title = :title,
-                content = :content,
-                unit_number = :unit_number,
-                tags = :tags,
-                related_entries = :related_entries,
-                comments = :comments,
-                is_favorite = :is_favorite,
-                last_updated = CURRENT_TIMESTAMP
-            WHERE id = :id
-        """, id=note_id, title=title, content=content, unit_number=unit_number,
-           tags=tags, related_entries=related_entries, comments=comments, 
-           is_favorite=is_favorite)
-        
-        flash('Note updated successfully!', 'success')
-        return redirect(url_for('notes.view_note', note_id=note_id))
-    
-    # GET request - show edit form
+    # Get the note first to ensure it exists
     note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
     if not note:
         abort(404)
     
-    return render_template('notes/add.html', note=note[0])
+    note = note[0]
+    
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        unit_number = request.form.get('unit_number', '').strip()
+        tags = request.form.get('tags', '').strip()
+        related_entries = request.form.get('related_entries', '').strip()
+        comments = request.form.get('comments', '').strip()
+        is_favorite = 1 if request.form.get('is_favorite') else 0
+        
+        # Validate required fields
+        if not title or not content:
+            flash('Title and content are required', 'error')
+            return render_template('notes/edit.html', note={
+                'id': note_id,
+                'title': title,
+                'content': content,
+                'unit_number': unit_number,
+                'tags': tags,
+                'related_entries': related_entries,
+                'comments': comments,
+                'is_favorite': is_favorite
+            })
+        
+        try:
+            unit_number = int(unit_number) if unit_number else None
+            
+            # Update the note
+            db.execute("""
+                UPDATE notes 
+                SET title = :title,
+                    content = :content,
+                    unit_number = :unit_number,
+                    tags = :tags,
+                    related_entries = :related_entries,
+                    comments = :comments,
+                    is_favorite = :is_favorite,
+                    last_updated = CURRENT_TIMESTAMP
+                WHERE id = :id
+            """, 
+            id=note_id,
+            title=title,
+            content=content,
+            unit_number=unit_number,
+            tags=tags if tags else None,
+            related_entries=related_entries if related_entries else None,
+            comments=comments if comments else None,
+            is_favorite=is_favorite)
+            
+            flash('Note updated successfully!', 'success')
+            return redirect(url_for('notes.view_note', note_id=note_id))
+            
+        except Exception as e:
+            flash(f'An error occurred: {str(e)}', 'error')
+            return render_template('notes/edit.html', note={
+                'id': note_id,
+                'title': title,
+                'content': content,
+                'unit_number': unit_number,
+                'tags': tags,
+                'related_entries': related_entries,
+                'comments': comments,
+                'is_favorite': is_favorite
+            })
+    
+    # GET request - show edit form with current note data
+    return render_template('notes/edit.html', note=note)
 
 @notes_bp.route('/<int:note_id>')
 def view_note(note_id):

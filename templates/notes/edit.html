@@ -1,0 +1,78 @@
+{% extends "notes/base.html" %}
+
+{% block title %}Edit Note{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('notes.view_note', note_id=note.id) }}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; margin-bottom: 1rem;">
+            ← Back to Note
+        </a>
+        
+        <h1 style="color: var(--primary); margin-bottom: 1.5rem;">
+            Edit Note
+        </h1>
+        
+        <div class="card" style="background: rgba(10, 25, 47, 0.7); padding: 2rem;">
+            <form method="POST" action="{{ url_for('notes.edit_note', note_id=note.id) }}">
+                <div class="form-group">
+                    <label for="title" class="form-label">Title *</label>
+                    <input type="text" id="title" name="title" class="form-control" 
+                           value="{{ note.title }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content" class="form-label">Content *</label>
+                    <textarea id="content" name="content" class="form-control" rows="8" required>{{ note.content }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="unit_number" class="form-label">Unit Number (Optional)</label>
+                    <input type="number" id="unit_number" name="unit_number" class="form-control" 
+                           value="{{ note.unit_number if note.unit_number }}" min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tags" class="form-label">Tags (Optional)</label>
+                    <input type="text" id="tags" name="tags" class="form-control" 
+                           value="{{ note.tags if note.tags }}" placeholder="comma, separated, tags">
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        Use commas to separate multiple tags (e.g., "contracts, torts, civil-procedure")
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="related_entries" class="form-label">Related Dictionary Entries (Optional)</label>
+                    <input type="text" id="related_entries" name="related_entries" class="form-control" 
+                           value="{{ note.related_entries if note.related_entries }}" placeholder="1, 5, 12">
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        Enter the IDs of related dictionary entries, separated by commas
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comments" class="form-label">Your Comments (Optional)</label>
+                    <textarea id="comments" name="comments" class="form-control" rows="3">{{ note.comments if note.comments }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="is_favorite" name="is_favorite" value="1" 
+                               {% if note.is_favorite %}checked{% endif %}>
+                        <span>Mark as favorite</span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn" style="background: var(--primary); color: #000;">
+                        Update Note
+                    </button>
+                    <a href="{{ url_for('notes.view_note', note_id=note.id) }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
