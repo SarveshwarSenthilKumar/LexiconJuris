@@ -133,15 +133,200 @@
         color: #ffd700;
         margin-right: 0.5rem;
     }
+    
+    .highlight {
+        background-color: rgba(0, 240, 255, 0.3);
+        border-radius: 2px;
+        padding: 0 2px;
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('noteSearch');
+    const searchCount = document.getElementById('searchCount');
+    const noteContent = document.querySelector('.note-content');
+    
+    if (!searchInput || !noteContent) return;
+    
+    // Store original content to reset highlights
+    const originalContent = noteContent.innerHTML;
+    let currentSearchTerm = '';
+    let currentMatches = [];
+    let currentMatchIndex = -1;
+    
+    // Function to escape special regex characters
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    // Function to remove all highlights
+    function removeHighlights() {
+        const highlights = noteContent.querySelectorAll('.highlight');
+        highlights.forEach(highlight => {
+            const parent = highlight.parentNode;
+            parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+            parent.normalize(); // Combine adjacent text nodes
+        });
+    }
+    
+    // Function to highlight text
+    function highlightText(text, searchTerm) {
+        if (!searchTerm.trim()) return text;
+        
+        const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+        return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+    
+    // Function to search in note
+    function searchInNote() {
+        const searchTerm = searchInput.value.trim();
+        
+        // Reset if search is empty
+        if (searchTerm === '') {
+            noteContent.innerHTML = originalContent;
+            searchCount.textContent = '';
+            currentSearchTerm = '';
+            currentMatches = [];
+            currentMatchIndex = -1;
+            return;
+        }
+        
+        // Only search if the search term has changed
+        if (searchTerm === currentSearchTerm) return;
+        
+        currentSearchTerm = searchTerm;
+        
+        // Reset content to original
+        noteContent.innerHTML = originalContent;
+        
+        // Create a temporary div to work with the content
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalContent;
+        
+        // Create a tree walker to find all text nodes
+        const walker = document.createTreeWalker(
+            tempDiv,
+            NodeFilter.SHOW_TEXT,
+            { 
+                acceptNode: function(node) {
+                    // Only process text nodes with content
+                    return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                }
+            },
+            false
+        );
+        
+        const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
+        currentMatches = [];
+        
+        // Process each text node
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            const text = node.nodeValue;
+            let match;
+            
+            // Find all matches in this text node
+            while ((match = regex.exec(text)) !== null) {
+                currentMatches.push({
+                    node: node,
+                    index: match.index,
+                    length: match[0].length
+                });
+            }
+            
+            // Replace text with highlighted version
+            if (currentMatches.length > 0) {
+                const span = document.createElement('span');
+                let lastIndex = 0;
+                let highlighted = '';
+                
+                // Process each match in this node
+                currentMatches.forEach(match => {
+                    if (match.node === node) {
+                        // Add text before the match
+                        if (match.index > lastIndex) {
+                            highlighted += text.substring(lastIndex, match.index);
+                        }
+                        // Add the highlighted match
+                        highlighted += `<span class="highlight">${text.substring(match.index, match.index + match.length)}</span>`;
+                        lastIndex = match.index + match.length;
+                    }
+                });
+                
+                // Add remaining text after the last match
+                if (lastIndex < text.length) {
+                    highlighted += text.substring(lastIndex);
+                }
+                
+                // Replace the text node with the highlighted HTML
+                span.innerHTML = highlighted;
+                node.parentNode.replaceChild(span, node);
+                
+                // Reset for next node
+                currentMatches = [];
+            }
+        }
+        
+        // Update the content with highlighted text
+        noteContent.innerHTML = tempDiv.innerHTML;
+        
+        // Update match count
+        const matchCount = document.querySelectorAll('.highlight').length;
+        searchCount.textContent = matchCount > 0 ? `${matchCount} ${matchCount === 1 ? 'match' : 'matches'}` : 'No matches';
+        
+        // Scroll to first match if any
+        const firstMatch = document.querySelector('.highlight');
+        if (firstMatch) {
+            firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    // Add event listeners
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(searchInNote, 300);
+    });
+    
+    // Handle keyboard navigation
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            searchInNote();
+        } else if (e.key === 'Escape') {
+            searchInput.value = '';
+            searchInNote();
+            searchInput.blur();
+        }
+    });
+    
+    // Initial search if there's a hash in the URL
+    if (window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        searchInput.value = decodeURIComponent(hash);
+        searchInNote();
+    }
+});
+</script>
 {% endblock %}
 
 {% block content %}
 <div class="container" style="max-width: 800px; margin: 0 auto;">
-    <div style="margin-bottom: 1rem;">
-        <a href="{{ url_for('notes.index') }}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; margin-bottom: 1rem;">
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <a href="{{ url_for('notes.index') }}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center;">
             ← Back to Notes
         </a>
+        <div class="search-container" style="position: relative; max-width: 300px; width: 100%;">
+            <input type="text" id="noteSearch" placeholder="Search in this note..." 
+                   style="width: 100%; padding: 0.5rem 1rem; background: rgba(10, 25, 47, 0.7); 
+                          border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; 
+                          color: #e6f1ff; font-size: 0.9rem;">
+            <span id="searchCount" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                       color: #8892b0; font-size: 0.8rem; pointer-events: none;"></span>
+        </div>
     </div>
     
     <article class="note">

@@ -1,6 +1,4 @@
 Add note logs to track what is done each day
-Remove sarveshwar flask template shout or login shout
-Add notes feature, update and make it look better
 add test feature
 add a unit distinguisher for unit tests, search by unit
 add an ai created example feature
