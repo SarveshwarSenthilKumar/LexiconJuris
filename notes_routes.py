@@ -10,8 +10,6 @@ notes_bp = Blueprint('notes', __name__, url_prefix='/notes')
 @notes_bp.route('')
 def index():
     """Display all notes"""
-    if not session.get("name"):
-        return redirect("/auth/login")
     
     db = SQL("sqlite:///notes.db")
     notes = db.execute("""
@@ -179,8 +177,6 @@ def edit_note(note_id):
 @notes_bp.route('/<int:note_id>')
 def view_note(note_id):
     """View a specific note"""
-    if not session.get("name"):
-        return redirect("/auth/login")
     
     db = SQL("sqlite:///notes.db")
     
