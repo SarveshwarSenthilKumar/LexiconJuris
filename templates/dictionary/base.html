@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Law Notes - {% block title %}{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #00f0ff;
@@ -79,15 +80,31 @@
             <div class="header-content">
                 <a href="{{ url_for('dictionary.index') }}" class="logo">Law Notes</a>
                 <nav class="nav-links">
-                    <a href="{{ url_for('dictionary.index') }}" class="nav-link">Dictionary</a>
-                    {% if session.get("name") %}
-                    <a href="{{ url_for('dictionary.add_entry') }}" class="nav-link">Add Entry</a>
-                    <a href="{{ url_for('notes.index') }}" class="nav-link">Notes</a>
-                    <a href="{{ url_for('search') }}" class="nav-link" style="display: flex; align-items: center; gap: 0.3rem;">
-                        <span>Search</span>
-                        <span style="font-size: 0.7rem; background: rgba(0, 240, 255, 0.2); padding: 0.1rem 0.3rem; border-radius: 3px;">⌘K</span>
+                    <!-- Always show these main navigation links -->
+                    <a href="{{ url_for('dictionary.index') }}" class="nav-link">
+                        <i class="fas fa-book"></i> Dictionary
                     </a>
-                    <a href="/auth/logout" class="nav-link">Logout</a>
+                    <a href="{{ url_for('notes.index') }}" class="nav-link">
+                        <i class="fas fa-sticky-note"></i> Notes
+                    </a>
+                    <a href="{{ url_for('search') }}" class="nav-link" style="display: flex; align-items: center; gap: 0.3rem;">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                        <span style="font-size: 0.7rem; background: rgba(0, 240, 255, 0.2); padding: 0.1rem 0.3rem; border-radius: 3px; margin-left: 0.2rem;">⌘K</span>
+                    </a>
+                    
+                    <!-- Show these only when logged in -->
+                    {% if session.get("name") %}
+                    <a href="{{ url_for('dictionary.add_entry') }}" class="nav-link" style="margin-left: 1rem;">
+                        <i class="fas fa-plus"></i> Add Entry
+                    </a>
+                    <a href="/auth/logout" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                    {% else %}
+                    <a href="/auth/login" class="nav-link" style="margin-left: 1rem;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
                     {% endif %}
                 </nav>
             </div>
