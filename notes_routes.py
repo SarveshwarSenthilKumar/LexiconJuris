@@ -174,7 +174,18 @@ def edit_note(note_id):
     # GET request - show edit form with current note data
     return render_template('notes/edit.html', note=note)
 
-@notes_bp.route('/<int:note_id>')
+@notes_bp.route('/<int:note_id>/content')
+def get_note_content(note_id):
+    """Get the full content of a note by ID for search functionality"""
+    db = SQL("sqlite:///notes.db")
+    note = db.execute("SELECT content FROM notes WHERE id = ?", note_id)
+    
+    if not note:
+        return {"error": "Note not found"}, 404
+        
+    return {"content": note[0]['content']}
+
+@notes_bp.route('/view/<int:note_id>')
 def view_note(note_id):
     """View a specific note"""
     

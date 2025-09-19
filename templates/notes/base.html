@@ -47,6 +47,57 @@
         color: #ffd700;
     }
     
+    /* Search highlight styles */
+    .highlight {
+        background-color: rgba(100, 255, 218, 0.2);
+        color: #64ffda;
+        padding: 0.1em 0.2em;
+        border-radius: 3px;
+    }
+    
+    /* Search container */
+    .search-container {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #1e2a3a;
+        border-radius: 4px;
+        background-color: #0a192f;
+        color: #e6f1ff;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #64ffda;
+        box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.2);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8892b0;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #8892b0;
+        font-style: italic;
+        display: none;
+    }
+    
+    .no-results.hidden {
+        display: none;
+    }
+    
     .unit-header {
         color: var(--primary);
         margin: 2rem 0 1rem;

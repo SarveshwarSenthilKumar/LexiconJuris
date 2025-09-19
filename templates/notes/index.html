@@ -74,11 +74,6 @@
         <input type="text" id="noteSearch" class="search-input" placeholder="Search notes..." autocomplete="off">
     </div>
     
-    <!-- Removed 'no notes' message as requested -->
-    
-    <div id="noResults" class="no-results hidden">
-        No notes found matching your search.
-    </div>
     
     <div id="notesContainer">
         {% if notes_by_unit %}
@@ -98,6 +93,7 @@
                     <div class="notes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;" data-unit="{{ unit or 'general' }}">
                         {% for note in notes %}
                             <div class="note-card" 
+                                 data-id="{{ note.id }}"
                                  data-title="{{ note.title|lower }}" 
                                  data-content="{{ note.content|lower }}" 
                                  data-unit="{{ note.unit_number or 'general' }}"
