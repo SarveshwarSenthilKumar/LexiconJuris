@@ -1,8 +1,79 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from sql import SQL
 import sqlite3
 from datetime import datetime
 import re
+import os
+import uuid
+from werkzeug.utils import secure_filename
+
+# Configure upload folder and allowed extensions
+UPLOAD_FOLDER = os.path.join('uploads', 'worksheets')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_worksheet_images(note_id, files):
+    """Save uploaded worksheet images and return a list of saved filenames"""
+    if 'worksheet_images' not in files:
+        return []
+    
+    saved_files = []
+    for file in files.getlist('worksheet_images'):
+        if file and allowed_file(file.filename):
+            # Generate a unique filename to prevent collisions
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{uuid.uuid4()}.{ext}"
+            
+            # Ensure the upload directory exists
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+            
+            # Save the file
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(filepath)
+            
+            # Save file info to database using raw SQLite connection
+            conn = sqlite3.connect('notes.db')
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO worksheet_images (note_id, filename, original_filename)
+                VALUES (?, ?, ?)
+            """, (note_id, filename, file.filename))
+            
+            # Get the ID of the last inserted row
+            worksheet_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            
+            saved_files.append({
+                'id': worksheet_id,
+                'filename': filename,
+                'original_filename': file.filename
+            })
+    
+    # Update the has_worksheet flag on the note
+    if saved_files:
+        db = SQL("sqlite:///notes.db")
+        db.execute("""
+            UPDATE notes 
+            SET has_worksheet = 1 
+            WHERE id = :note_id
+        """, note_id=note_id)
+    
+    return saved_files
+
+def get_worksheet_images(note_id):
+    """Get all worksheet images for a note"""
+    db = SQL("sqlite:///notes.db")
+    return db.execute("""
+        SELECT id, filename, original_filename, 
+               strftime('%Y-%m-%d %H:%M', upload_date) as upload_date
+        FROM worksheet_images 
+        WHERE note_id = :note_id
+        ORDER BY upload_date DESC
+    """, note_id=note_id)
 
 # Initialize Blueprint
 notes_bp = Blueprint('notes', __name__, url_prefix='/notes')
@@ -16,7 +87,7 @@ def index():
         SELECT id, title, unit_number, 
                strftime('%Y-%m-%d', created_at) as created_date,
                strftime('%Y-%m-%d', last_updated) as last_updated,
-               is_favorite
+               is_favorite, has_worksheet
         FROM notes 
         ORDER BY last_updated DESC
     """)
@@ -62,7 +133,7 @@ def add_note():
             unit_number = int(unit_number) if unit_number else None
             
             db = SQL("sqlite:///notes.db")
-            db.execute("""
+            result = db.execute("""
                 INSERT INTO notes (title, content, unit_number, tags, 
                                  related_entries, comments, is_favorite)
                 VALUES (:title, :content, :unit_number, :tags, 
@@ -76,8 +147,15 @@ def add_note():
             comments=comments if comments else None,
             is_favorite=is_favorite)
             
+            # Handle worksheet images if any
+            note_id = result.lastrowid
+            if 'worksheet_images' in request.files:
+                saved_files = save_worksheet_images(note_id, request.files)
+                if saved_files:
+                    flash(f'Successfully uploaded {len(saved_files)} worksheet file(s)!', 'success')
+            
             flash('Note added successfully!', 'success')
-            return redirect(url_for('notes.index'))
+            return redirect(url_for('notes.view_note', note_id=note_id))
             
         except Exception as e:
             flash(f'An error occurred: {str(e)}', 'error')
@@ -155,6 +233,12 @@ def edit_note(note_id):
             comments=comments if comments else None,
             is_favorite=is_favorite)
             
+            # Handle worksheet images if any
+            if 'worksheet_images' in request.files:
+                saved_files = save_worksheet_images(note_id, request.files)
+                if saved_files:
+                    flash(f'Successfully uploaded {len(saved_files)} worksheet file(s)!', 'success')
+            
             flash('Note updated successfully!', 'success')
             return redirect(url_for('notes.view_note', note_id=note_id))
             
@@ -172,6 +256,10 @@ def edit_note(note_id):
             })
     
     # GET request - show edit form with current note data
+    # Get worksheet images for this note
+    worksheet_images = get_worksheet_images(note_id)
+    note['worksheet_images'] = worksheet_images
+    
     return render_template('notes/edit.html', note=note)
 
 @notes_bp.route('/<int:note_id>/content')
@@ -184,6 +272,63 @@ def get_note_content(note_id):
         return {"error": "Note not found"}, 404
         
     return {"content": note[0]['content']}
+
+@notes_bp.route('/worksheet/<filename>')
+def serve_worksheet(filename):
+    """Serve uploaded worksheet files"""
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+@notes_bp.route('/delete_worksheet/<int:worksheet_id>', methods=['POST'])
+def delete_worksheet(worksheet_id):
+    """Delete a worksheet image"""
+    if not session.get("name"):
+        return redirect("/auth/login")
+    
+    db = SQL("sqlite:///notes.db")
+    
+    # Get the worksheet to delete
+    worksheet = db.execute("""
+        SELECT id, note_id, filename 
+        FROM worksheet_images 
+        WHERE id = :id
+    """, id=worksheet_id)
+    
+    if not worksheet:
+        flash('Worksheet not found', 'error')
+        return redirect(url_for('notes.index'))
+    
+    worksheet = worksheet[0]
+    
+    try:
+        # Delete the file
+        filepath = os.path.join(UPLOAD_FOLDER, worksheet['filename'])
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        
+        # Delete the database record
+        db.execute("DELETE FROM worksheet_images WHERE id = :id", id=worksheet_id)
+        
+        # Check if there are any remaining worksheets for this note
+        remaining = db.execute("""
+            SELECT COUNT(*) as count 
+            FROM worksheet_images 
+            WHERE note_id = :note_id
+        """, note_id=worksheet['note_id'])
+        
+        # Update the has_worksheet flag if no more worksheets
+        if remaining and remaining[0]['count'] == 0:
+            db.execute("""
+                UPDATE notes 
+                SET has_worksheet = 0 
+                WHERE id = :note_id
+            """, note_id=worksheet['note_id'])
+        
+        flash('Worksheet deleted successfully', 'success')
+        return redirect(url_for('notes.edit_note', note_id=worksheet['note_id']))
+    
+    except Exception as e:
+        flash(f'Error deleting worksheet: {str(e)}', 'error')
+        return redirect(url_for('notes.edit_note', note_id=worksheet['note_id']))
 
 @notes_bp.route('/view/<int:note_id>')
 def view_note(note_id):
@@ -271,10 +416,16 @@ def view_note(note_id):
                 WHERE id IN ({})
             """.format(','.join('?' * len(entry_ids))), *entry_ids)
     
+    # Get worksheet images for this note
+    worksheet_images = []
+    if note.get('has_worksheet'):
+        worksheet_images = get_worksheet_images(note_id)
+    
     return render_template('notes/view.html', 
                          note=note, 
                          content=processed_content,
-                         related_entries=related_entries)
+                         related_entries=related_entries,
+                         worksheet_images=worksheet_images)
 
 def init_app(app):
     app.register_blueprint(notes_bp)
