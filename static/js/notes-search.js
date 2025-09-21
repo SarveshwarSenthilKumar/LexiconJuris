@@ -3,6 +3,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const noResults = document.getElementById('noResults');
     let searchTimeout;
     const noteContents = new Map(); // Cache for note contents
+    let showOnlyWithWorksheets = false;
+    
+    // Create and add worksheet filter button
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+        const worksheetFilterBtn = document.createElement('button');
+        worksheetFilterBtn.id = 'worksheetFilter';
+        worksheetFilterBtn.title = 'Show only notes with worksheets';
+        worksheetFilterBtn.innerHTML = '📎';
+        worksheetFilterBtn.style.background = 'transparent';
+        worksheetFilterBtn.style.border = '1px solid var(--primary)';
+        worksheetFilterBtn.style.borderRadius = '4px';
+        worksheetFilterBtn.style.padding = '0.5rem';
+        worksheetFilterBtn.style.cursor = 'pointer';
+        worksheetFilterBtn.style.marginLeft = '0.5rem';
+        worksheetFilterBtn.style.color = '#8892b0';
+        worksheetFilterBtn.style.transition = 'all 0.2s ease';
+        
+        worksheetFilterBtn.addEventListener('click', function() {
+            showOnlyWithWorksheets = !showOnlyWithWorksheets;
+            this.style.background = showOnlyWithWorksheets ? 'rgba(100, 255, 218, 0.1)' : 'transparent';
+            this.style.color = showOnlyWithWorksheets ? 'var(--primary)' : '#8892b0';
+            filterNotes();
+        });
+        
+        const searchWrapper = document.createElement('div');
+        searchWrapper.style.display = 'flex';
+        searchWrapper.style.alignItems = 'center';
+        searchWrapper.style.width = '100%';
+        
+        searchContainer.appendChild(searchWrapper);
+        searchWrapper.appendChild(searchInput);
+        searchWrapper.appendChild(worksheetFilterBtn);
+    }
     
     if (searchInput) {
         searchInput.addEventListener('input', function() {
@@ -62,16 +96,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const tags = card.getAttribute('data-tags') || '';
             const date = card.getAttribute('data-date') || '';
             const favorite = card.getAttribute('data-favorite') || '';
+            const hasWorksheet = card.getAttribute('data-has-worksheet') === 'true';
+            
+            // Apply worksheet filter
+            if (showOnlyWithWorksheets && !hasWorksheet) {
+                return; // Skip notes without worksheets when filter is active
+            }
             
             // Check visible fields first
-            if (title.includes(searchTerm) || 
+            if (searchTerm && (title.includes(searchTerm) || 
                 preview.includes(searchTerm) || 
                 unit.includes(searchTerm) ||
                 tags.includes(searchTerm) ||
                 date.includes(searchTerm) ||
-                favorite.includes(searchTerm)) {
+                favorite.includes(searchTerm))) {
                 visibleMatches.push(card);
-            } else if (noteId) {
+            } else if (noteId && searchTerm) {
                 // If not found in visible fields, check full content
                 contentSearchPromises.push(
                     checkFullContent(card, noteId, searchTerm)
@@ -129,11 +169,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // If not in cache, fetch from server
             if (!content) {
-                const response = await fetch(`/notes/${noteId}/content`);
-                if (!response.ok) return false;
-                
-                const data = await response.json();
-                if (!data.content) return false;
+                try {
+                    const response = await fetch(`/notes/${noteId}/content`);
+                    if (!response.ok) return false;
+                    
+                    const data = await response.json();
+                    if (!data.content) return false;
+                    
+                    content = data.content.toLowerCase();
+                    noteContents.set(noteId, content);
+                } catch (error) {
+                    console.error('Error fetching note content:', error);
+                    return false;
+                }
                 
                 content = data.content.toLowerCase();
                 noteContents.set(noteId, content);

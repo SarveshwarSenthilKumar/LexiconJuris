@@ -55,6 +55,11 @@
         border-radius: 2px;
         padding: 0 2px;
     }
+    
+    .favorite {
+        color: #ffd700;
+        margin-right: 0.25rem;
+    }
 </style>
 {% endblock %}
 
@@ -98,12 +103,18 @@
                                  data-content="{{ note.content|lower }}" 
                                  data-unit="{{ note.unit_number or 'general' }}"
                                  data-tags="{{ note.tags|default('', true)|lower }}"
+                                 data-has-worksheet="{{ 'true' if note.has_worksheet else 'false' }}"
                                  data-date="{{ (note.last_updated or note.created_date)|lower }}"
                                  data-favorite="{{ 'favorite' if note.is_favorite else '' }}">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <h3 class="note-title">
-                                        {% if note.is_favorite %}<span class="favorite">★</span> {% endif %}
-                                        <span class="title-text">{{ note.title }}</span>
+                                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: var(--primary);">
+                                        {% if note.is_favorite %}<span class="favorite">★</span>{% endif %}
+                                        {{ note.title }}
+                                        {% if note.has_worksheet %}
+                                        <span style="margin-left: 0.5rem; font-size: 0.9em; color: #64ffda;" title="Has worksheet">
+                                            📎
+                                        </span>
+                                        {% endif %}
                                     </h3>
                                     <span class="note-date" style="color: #8892b0; font-size: 0.85rem;">
                                         {{ note.last_updated or note.created_date }}

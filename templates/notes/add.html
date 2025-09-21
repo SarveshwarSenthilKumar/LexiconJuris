@@ -14,7 +14,7 @@
         </h1>
         
         <div class="card" style="background: rgba(10, 25, 47, 0.7); padding: 2rem;">
-            <form method="POST" action="{{ url_for('notes.add_note') }}">
+            <form method="POST" action="{{ url_for('notes.add_note') }}" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="title" class="form-label">Title *</label>
                     <input type="text" id="title" name="title" class="form-control" 
@@ -63,6 +63,16 @@
                     </label>
                 </div>
                 
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="worksheet_images" class="form-label">Upload Worksheet (Optional)</label>
+                    <input type="file" id="worksheet_images" name="worksheet_images" class="form-control" multiple 
+                           accept=".png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.txt">
+                    <small style="color: #8892b0; font-size: 0.9rem; display: block; margin-top: 0.5rem;">
+                        Supported formats: PNG, JPG, GIF, PDF, DOC, DOCX, TXT
+                    </small>
+                    <div id="file-list" style="margin-top: 0.5rem;"></div>
+                </div>
+                
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button type="submit" class="btn" style="background: var(--primary); color: #000;">
                         Save Note
@@ -71,6 +81,48 @@
                         Cancel
                     </a>
                 </div>
+                
+                <script>
+                // Show selected file names
+                document.getElementById('worksheet_images').addEventListener('change', function(e) {
+                    const fileList = document.getElementById('file-list');
+                    fileList.innerHTML = '';
+                    
+                    if (this.files.length > 0) {
+                        const list = document.createElement('ul');
+                        list.style.listStyle = 'none';
+                        list.style.padding = '0';
+                        list.style.margin = '0.5rem 0 0 0';
+                        
+                        for (let i = 0; i < this.files.length; i++) {
+                            const item = document.createElement('li');
+                            item.style.display = 'flex';
+                            item.style.alignItems = 'center';
+                            item.style.marginBottom = '0.3rem';
+                            item.style.padding = '0.3rem 0.5rem';
+                            item.style.background = 'rgba(100, 255, 218, 0.1)';
+                            item.style.borderRadius = '4px';
+                            
+                            const icon = document.createElement('span');
+                            icon.textContent = '📄';
+                            icon.style.marginRight = '0.5rem';
+                            
+                            const fileName = document.createElement('span');
+                            fileName.textContent = this.files[i].name;
+                            fileName.style.flex = '1';
+                            fileName.style.whiteSpace = 'nowrap';
+                            fileName.style.overflow = 'hidden';
+                            fileName.style.textOverflow = 'ellipsis';
+                            
+                            item.appendChild(icon);
+                            item.appendChild(fileName);
+                            list.appendChild(item);
+                        }
+                        
+                        fileList.appendChild(list);
+                    }
+                });
+                </script>
             </form>
         </div>
     </div>
