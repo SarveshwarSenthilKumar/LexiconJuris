@@ -139,6 +139,100 @@ def highlight_filter(s, query):
     except:
         return s
 
+def get_db_connection(db_name):
+    """Create and return a database connection"""
+    return SQL(f"sqlite:///{db_name}")
+
+def close_db_connection(db):
+    """Close a database connection if it exists"""
+    if db and hasattr(db, 'db') and db.db:
+        try:
+            db.db.close()
+        except Exception as e:
+            print(f"Error closing database connection: {e}")
+        # Clear the connection
+        db.db = None
+
+@app.route('/api/search/dictionary')
+def api_search_dictionary():
+    """API endpoint for searching dictionary entries"""
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+    
+    db = None
+    try:
+        # Get database connection
+        db = get_db_connection('dictionary.db')
+        # Search in word_phrase, definition, and example fields
+        results = db.execute("""
+            SELECT id, word_phrase, definition, example, 
+                   (CASE 
+                       WHEN word_phrase LIKE ? THEN 1  -- Highest priority: exact match at start of word_phrase
+                       WHEN word_phrase LIKE ? THEN 2  -- High priority: match at start of word_phrase
+                       WHEN definition LIKE ? OR example LIKE ? THEN 3  -- Medium priority: match in definition or example
+                       ELSE 4  -- Lower priority: match anywhere in word_phrase
+                    END) as priority
+            FROM entries
+            WHERE word_phrase LIKE ? OR definition LIKE ? OR example LIKE ?
+            ORDER BY priority, word_phrase
+            LIMIT 5
+        """, 
+        f"{query}%", f"%{query}%", f"%{query}%", f"%{query}%", 
+        f"%{query}%", f"%{query}%", f"%{query}%")
+        
+        return jsonify(results)
+    except Exception as e:
+        print(f"Error in dictionary search: {str(e)}")
+        return jsonify({"error": "An error occurred while searching the dictionary"}), 500
+    finally:
+        if db:
+            close_db_connection(db)
+
+@app.route('/api/search/notes')
+def api_search_notes():
+    """API endpoint for searching notes"""
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+    
+    db = None
+    try:
+        # Get database connection
+        db = get_db_connection('notes.db')
+        # Search in title and content fields
+        results = db.execute("""
+            SELECT id, title, content, last_updated,
+                   (CASE 
+                       WHEN title LIKE ? THEN 1  -- Highest priority: match in title
+                       ELSE 2  -- Lower priority: match in content
+                    END) as priority
+            FROM notes
+            WHERE title LIKE ? OR content LIKE ?
+            ORDER BY priority, last_updated DESC
+            LIMIT 5
+        """, 
+        f"%{query}%", f"%{query}%", f"%{query}%")
+        
+        # Format the results
+        formatted_results = []
+        for row in results:
+            formatted_results.append({
+                'id': row['id'],
+                'title': row['title'],
+                'snippet': row['content'][:150] + ('...' if len(row['content']) > 150 else ''),
+                'last_updated': row['last_updated']
+            })
+        
+        return jsonify(formatted_results)
+    except Exception as e:
+        print(f"Error in notes search: {str(e)}")
+        app.logger.error(f"API search error (notes): {str(e)}")
+        return jsonify({"error": "An error occurred while searching notes"}), 500
+    finally:
+        if db:
+            close_db_connection(db)
+
 if autoRun:
     if __name__ == '__main__':
-        app.run(debug=True, port=port)
+        app.run(debug=True, port=port, use_reloader=False)
