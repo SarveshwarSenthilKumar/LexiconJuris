@@ -175,13 +175,33 @@
 }
 
 .result-preview {
-    color: #8892b0;
+    color: #a8b2d1;
     font-size: 0.9rem;
-    margin: 0;
+    margin: 0.3rem 0 0 0;
+    line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-preview mark {
+    background-color: rgba(100, 255, 218, 0.2);
+    color: #64ffda;
+    padding: 0 2px;
+    border-radius: 3px;
+}
+
+.result-content {
+    padding: 0.5rem 0;
+}
+
+.result-date {
+    color: #8892b0;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    display: inline-block;
 }
 
 .result-meta {
@@ -286,10 +306,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Highlight search terms in text
     function highlightText(text, query) {
-        if (!query || !text) return text;
-        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escapedQuery})`, 'gi');
-        return text.replace(regex, '<span class="highlight">$1</span>');
+        if (!text || !query) return text || '';
+        
+        // Escape special regex characters
+        const escapeRegExp = (string) => {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+        
+        let result = String(text);
+        const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
+        
+        // First, highlight exact phrase matches
+        const exactPhraseRegex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+        result = result.replace(exactPhraseRegex, '<mark>$1</mark>');
+        
+        // Then highlight individual terms that weren't already matched
+        searchTerms.forEach(term => {
+            if (term.length < 2) return; // Skip very short terms
+            const termRegex = new RegExp(`(?!<[^>]*?)(?<![^<])(?=[^>]*(<\/mark>|$))(${escapeRegExp(term)})`, 'gi');
+            result = result.replace(termRegex, (match, p1, p2, p3) => {
+                // Only replace if not already inside a mark tag
+                return match.includes('<mark>') ? match : `<mark>${match}</mark>`;
+            });
+        });
+        
+        return result;
     }
     
     // Format date
@@ -366,17 +407,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 let html = '';
                 results.forEach(note => {
-                    const preview = note.content || '';
-                    const highlightedTitle = highlightText(note.title, query);
-                    const highlightedPreview = highlightText(preview.substring(0, 150) + (preview.length > 150 ? '...' : ''), query);
+                    const title = note.title || 'Untitled Note';
+                    const content = note.content || '';
+                    const highlightedTitle = highlightText(title, query);
+                    
+                    // Create a preview with highlighted terms
+                    let preview = note.snippet || content.substring(0, 200);
+                    if (preview.length > 200) {
+                        preview = preview.substring(0, 200) + '...';
+                    }
+                    const highlightedPreview = highlightText(preview, query);
+                    
+                    // Format the last updated time
+                    const lastUpdated = note.last_updated || note.created_at || new Date().toISOString();
+                    const formattedDate = formatDate(lastUpdated);
                     
                     html += `
                         <div class="result-item" onclick="window.location.href='/notes/view/${note.id}'">
-                            <h4 class="result-title">${highlightedTitle}</h4>
-                            <p class="result-preview">${highlightedPreview}</p>
-                            <div class="result-meta">
-                                ${note.unit_number ? `<span>Unit ${note.unit_number}</span>` : ''}
-                                <span>${formatDate(note.last_updated || note.created_at)}</span>
+                            <div class="result-content">
+                                <h4 class="result-title">${highlightedTitle}</h4>
+                                <p class="result-preview">${highlightedPreview}</p>
+                                <div class="result-meta">
+                                    <span class="result-date">${formattedDate}</span>
+                                </div>
                             </div>
                         </div>
                     `;

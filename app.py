@@ -200,27 +200,56 @@ def api_search_notes():
     try:
         # Get database connection
         db = get_db_connection('notes.db')
-        # Search in title and content fields
-        results = db.execute("""
+        
+        # Split query into individual words for more flexible searching
+        search_terms = [f"%{term}%" for term in query.split() if term.strip()]
+        if not search_terms:
+            return jsonify([])
+            
+        # Build the WHERE clause to search in title or content
+        where_conditions = []
+        params = []
+        
+        for term in search_terms:
+            where_conditions.append("(title LIKE ? OR content LIKE ?)")
+            params.extend([term, term])
+            
+        where_clause = " OR ".join(where_conditions)
+        
+        # Search in title and content fields with priority to title matches
+        results = db.execute(f"""
             SELECT id, title, content, last_updated,
                    (CASE 
                        WHEN title LIKE ? THEN 1  -- Highest priority: match in title
                        ELSE 2  -- Lower priority: match in content
                     END) as priority
             FROM notes
-            WHERE title LIKE ? OR content LIKE ?
+            WHERE {where_clause}
             ORDER BY priority, last_updated DESC
             LIMIT 5
-        """, 
-        f"%{query}%", f"%{query}%", f"%{query}%")
+        """, *([f"%{query}%"] + params))
         
-        # Format the results
+        # Format the results with highlighted content
         formatted_results = []
         for row in results:
+            # Find the position of the first match in content for snippet
+            content_lower = row['content'].lower()
+            query_lower = query.lower()
+            match_pos = content_lower.find(query_lower)
+            
+            # Create a snippet around the match (50 chars before and after)
+            if match_pos >= 0:
+                start = max(0, match_pos - 50)
+                end = min(len(row['content']), match_pos + len(query) + 50)
+                snippet = ('...' if start > 0 else '') + row['content'][start:end] + ('...' if end < len(row['content']) else '')
+            else:
+                snippet = row['content'][:150] + ('...' if len(row['content']) > 150 else '')
+            
             formatted_results.append({
                 'id': row['id'],
                 'title': row['title'],
-                'snippet': row['content'][:150] + ('...' if len(row['content']) > 150 else ''),
+                'content': row['content'],  # Include full content for client-side highlighting
+                'snippet': snippet,        # Include a snippet for the preview
                 'last_updated': row['last_updated']
             })
         
