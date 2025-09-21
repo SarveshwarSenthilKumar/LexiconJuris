@@ -362,6 +362,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return new Date(dateString).toLocaleDateString(undefined, options);
     }
     
+    // Make result items focusable and handle keyboard navigation
+    function makeResultsFocusable() {
+        document.querySelectorAll('.result-item').forEach((item, index) => {
+            item.setAttribute('tabindex', '0');
+        });
+    }
+
+    // Handle keyboard navigation for search results
+    function handleKeyboardNavigation(e) {
+        if (!spotlightSearch.classList.contains('show') || e.ctrlKey || e.metaKey) return;
+
+        const activeElement = document.activeElement;
+        const results = Array.from(document.querySelectorAll('.result-item'));
+        const currentIndex = results.indexOf(activeElement);
+
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                const nextIndex = currentIndex < results.length - 1 ? currentIndex + 1 : 0;
+                results[nextIndex]?.focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : results.length - 1;
+                results[prevIndex]?.focus();
+                break;
+            case 'Enter':
+                if (activeElement.classList.contains('result-item')) {
+                    e.preventDefault();
+                    activeElement.click();
+                }
+                break;
+        }
+    }
+
     // Search function
     function performSearch(query) {
         if (query.length < 2) {
@@ -397,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const highlightedPreview = highlightText(preview.substring(0, 150) + (preview.length > 150 ? '...' : ''), query);
                     
                     html += `
-                        <div class="result-item" onclick="window.location.href='/dictionary/entry/${entry.id}'">
+                        <div class="result-item" tabindex="0" data-href="/dictionary/entry/${entry.id}">
                             <h4 class="result-title">${highlightedTitle}</h4>
                             <p class="result-preview">${highlightedPreview}</p>
                         </div>
@@ -446,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const formattedDate = formatDate(lastUpdated);
                     
                     html += `
-                        <div class="result-item" onclick="window.location.href='/notes/view/${note.id}'">
+                        <div class="result-item" tabindex="0" data-href="/notes/view/${note.id}">
                             <div class="result-content">
                                 <h4 class="result-title">${highlightedTitle}</h4>
                                 <p class="result-preview">${highlightedPreview}</p>
@@ -466,6 +501,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
+    // Add keyboard navigation event listener
+    document.addEventListener('keydown', handleKeyboardNavigation);
+
     // Event listeners
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
@@ -496,11 +534,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Close when clicking outside
+    // Close when clicking outside or pressing Escape
     spotlightSearch.addEventListener('click', function(e) {
         if (e.target === spotlightSearch) {
             toggleSpotlightSearch();
         }
     });
+
+    // Handle clicks on result items
+    document.addEventListener('click', function(e) {
+        const resultItem = e.target.closest('.result-item');
+        if (resultItem && resultItem.dataset.href) {
+            window.location.href = resultItem.dataset.href;
+        }
+    });
+
+    // Make results focusable when search is shown
+    searchInput.addEventListener('focus', makeResultsFocusable);
 });
 </script>
