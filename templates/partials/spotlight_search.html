@@ -284,12 +284,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show/hide spotlight search
     function toggleSpotlightSearch() {
-        spotlightSearch.classList.toggle('show');
-        if (spotlightSearch.classList.contains('show')) {
-            searchInput.focus();
+        const isShowing = !spotlightSearch.classList.contains('show');
+        
+        // Force the browser to reflow/repaint
+        if (isShowing) {
+            spotlightSearch.style.display = 'flex';
+            void spotlightSearch.offsetHeight; // Trigger reflow
+        }
+        
+        spotlightSearch.classList.toggle('show', isShowing);
+        
+        if (isShowing) {
+            // Set focus and select in the next tick
+            requestAnimationFrame(() => {
+                searchInput.focus();
+                // Try both methods for maximum compatibility
+                searchInput.setSelectionRange(0, searchInput.value.length);
+                searchInput.select();
+                
+                // One more try after a small delay in case of animation
+                setTimeout(() => {
+                    searchInput.focus();
+                    searchInput.setSelectionRange(0, searchInput.value.length);
+                }, 50);
+            });
         } else {
             searchInput.value = '';
             clearResults();
+            // Ensure we clean up display property
+            spotlightSearch.style.display = '';
         }
     }
     
