@@ -10,6 +10,7 @@ from SarvAuth import *  # Used for user authentication functions
 from auth import auth_blueprint
 from dictionary_routes import dict_bp as dictionary_blueprint
 from notes_routes import notes_bp as notes_blueprint
+from test_routes import test_bp as test_blueprint
 
 app = Flask(__name__)
 
@@ -21,10 +22,18 @@ app.config['SECRET_KEY'] = os.urandom(24)  # Required for flash messages
 # Initialize extensions
 Session(app)
 
-# Register blueprints
-app.register_blueprint(auth_blueprint, url_prefix='/auth')
-app.register_blueprint(dictionary_blueprint, url_prefix='/dictionary')
-app.register_blueprint(notes_blueprint, url_prefix='/notes')
+# Initialize blueprints
+def init_blueprints(app):
+    app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    app.register_blueprint(dictionary_blueprint, url_prefix='/dictionary')
+    app.register_blueprint(notes_blueprint, url_prefix='/notes')
+    
+    # Initialize test blueprint
+    from test_routes import init_app as init_test_app
+    init_test_app(app)
+
+# Initialize all blueprints
+init_blueprints(app)
 
 # Configuration
 autoRun = True  # Set to True to run the server automatically when app.py is executed

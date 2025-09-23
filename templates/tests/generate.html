@@ -1,0 +1,202 @@
+{% extends "dictionary/base.html" %}
+
+{% block title %}Unit {{ unit_number }} Test{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Debug Information -->
+    <div class="alert alert-warning">
+        <h4>Debug Information</h4>
+        <p>Unit: {{ unit_number }}</p>
+        <p>Number of questions: {{ test_questions|length }}</p>
+        <p>Template: {{ self._TemplateReference__context.name }}</p>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Unit {{ unit_number }} Practice Test</h1>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                This test includes {{ test_questions|length }} questions based on your notes and dictionary entries for this unit.
+            </div>
+            
+            <form id="testForm">
+                {% for question in test_questions %}
+                <div class="card mb-4 question-card" data-type="{{ question.type }}">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Question {{ loop.index }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="question-text">{{ question.question|safe }}</p>
+                        
+                        {% if question.type == 'multiple_choice' %}
+                            <div class="form-group">
+                                {% for option in question.options %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" 
+                                           name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_{{ loop.index }}" value="{{ option }}">
+                                    <label class="form-check-label" for="q{{ loop.index0 }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                        {% elif question.type == 'fill_blank' %}
+                            <div class="form-group">
+                                <input type="text" class="form-control answer-input" 
+                                       name="q{{ loop.index0 }}" placeholder="Your answer...">
+                            </div>
+                            
+                        {% else %}
+                            <div class="form-group">
+                                <textarea class="form-control answer-input" name="q{{ loop.index0 }}" 
+                                          rows="3" placeholder="Your answer..."></textarea>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="answer-feedback mt-3 d-none">
+                            <div class="alert d-none" role="alert">
+                                <strong>Answer:</strong> <span class="correct-answer"></span>
+                            </div>
+                            <div class="user-answer"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="d-flex justify-content-between mb-5">
+                    <button type="button" class="btn btn-outline-primary" id="checkAnswers">
+                        <i class="fas fa-check-circle me-2"></i>Check Answers
+                    </button>
+                    <a href="{{ url_for('tests.generate_test', unit_number=unit_number) }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-sync-alt me-2"></i>Generate New Test
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkButton = document.getElementById('checkAnswers');
+    const questions = document.querySelectorAll('.question-card');
+    
+    // Store questions data in a JavaScript variable
+    const questionsData = JSON.parse('{{ test_questions|tojson|safe }}');
+    
+    // Store correct answers in data attributes
+    questions.forEach((card, index) => {
+        const question = questionsData[index];
+        card.dataset.correctAnswer = question.answer;
+        card.dataset.questionType = question.type;
+    });
+    
+    checkButton.addEventListener('click', function() {
+        let score = 0;
+        
+        questions.forEach((card, index) => {
+            const feedbackDiv = card.querySelector('.answer-feedback');
+            const alertDiv = feedbackDiv.querySelector('.alert');
+            const correctAnswer = card.dataset.correctAnswer.toLowerCase().trim();
+            const questionType = card.dataset.questionType;
+            let userAnswer = '';
+            let isCorrect = false;
+            
+            // Get user's answer based on question type
+            if (questionType === 'multiple_choice') {
+                const selected = card.querySelector('input[type="radio"]:checked');
+                userAnswer = selected ? selected.value : '';
+                isCorrect = userAnswer === correctAnswer;
+                
+            } else if (questionType === 'fill_blank') {
+                const input = card.querySelector('input[type="text"]');
+                userAnswer = input ? input.value.trim().toLowerCase() : '';
+                // For fill-in-the-blank, check if the answer is contained in the correct answer or vice versa
+                isCorrect = userAnswer && (correctAnswer.includes(userAnswer) || 
+                                         userAnswer.includes(correctAnswer));
+            } else {
+                // For short answer/definition questions
+                const textarea = card.querySelector('textarea');
+                userAnswer = textarea ? textarea.value.trim().toLowerCase() : '';
+                // For short answers, just show the correct answer without strict checking
+                isCorrect = false; // We'll just show the correct answer
+            }
+            
+            // Show feedback
+            const correctAnswerSpan = card.querySelector('.correct-answer');
+            const userAnswerDiv = card.querySelector('.user-answer');
+            
+            if (correctAnswerSpan) {
+                correctAnswerSpan.textContent = correctAnswer;
+            }
+            
+            if (userAnswerDiv) {
+                userAnswerDiv.innerHTML = userAnswer ? 
+                    `<strong>Your answer:</strong> ${userAnswer}` : 
+                    '<span class="text-muted">No answer provided</span>';
+            }
+            
+            // Style based on correctness
+            if (isCorrect) {
+                alertDiv.classList.remove('alert-danger', 'd-none');
+                alertDiv.classList.add('alert-success');
+                alertDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>Correct!';
+                score++;
+            } else {
+                alertDiv.classList.remove('alert-success', 'd-none');
+                alertDiv.classList.add('alert-danger');
+                alertDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Incorrect. The correct answer is:';
+            }
+            
+            feedbackDiv.classList.remove('d-none');
+        });
+        
+        // Show score
+        const scorePercentage = Math.round((score / questions.length) * 100);
+        alert(`You scored ${score} out of ${questions.length} (${scorePercentage}%)`);
+    });
+    
+    // Allow Enter key to submit answer for text inputs
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && e.target.matches('input[type="text"]')) {
+            e.preventDefault();
+            checkButton.click();
+        }
+    });
+});
+</script>
+
+<style>
+.question-card {
+    transition: all 0.3s ease;
+}
+
+.question-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.answer-feedback {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.correct-answer {
+    font-weight: 500;
+    color: #28a745;
+}
+
+.user-answer {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+}
+</style>
+{% endblock %}
