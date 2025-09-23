@@ -2,4 +2,3 @@ Add note logs to track what is done each day
 add test feature
 add a unit distinguisher for unit tests, search by unit
 add an ai created example feature
-add a slot for images of worksheets
