@@ -132,23 +132,27 @@ def add_note():
         try:
             unit_number = int(unit_number) if unit_number else None
             
-            db = SQL("sqlite:///notes.db")
-            result = db.execute("""
+            # Use a raw SQLite connection to get the lastrowid
+            conn = sqlite3.connect('notes.db')
+            cursor = conn.cursor()
+            
+            cursor.execute("""
                 INSERT INTO notes (title, content, unit_number, tags, 
                                  related_entries, comments, is_favorite)
-                VALUES (:title, :content, :unit_number, :tags, 
-                       :related_entries, :comments, :is_favorite)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, 
-            title=title,
-            content=content,
-            unit_number=unit_number,
-            tags=tags if tags else None,
-            related_entries=related_entries if related_entries else None,
-            comments=comments if comments else None,
-            is_favorite=is_favorite)
+            (title,
+             content,
+             unit_number,
+             tags if tags else None,
+             related_entries if related_entries else None,
+             comments if comments else None,
+             is_favorite))
             
-            # Handle worksheet images if any
-            note_id = result.lastrowid
+            # Get the last inserted row ID
+            note_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
             if 'worksheet_images' in request.files:
                 saved_files = save_worksheet_images(note_id, request.files)
                 if saved_files:
@@ -410,11 +414,13 @@ def view_note(note_id):
     if note.get('related_entries'):
         entry_ids = [int(id_str.strip()) for id_str in note['related_entries'].split(',') if id_str.strip().isdigit()]
         if entry_ids:
-            related_entries = db.execute("""
+            # Connect to the dictionary database
+            dict_db = SQL("sqlite:///dictionary.db")
+            related_entries = dict_db.execute("""
                 SELECT id, word_phrase 
-                FROM dictionary.entries 
+                FROM entries 
                 WHERE id IN ({})
-            """.format(','.join('?' * len(entry_ids))), *entry_ids)
+            """.format(','.join(['?'] * len(entry_ids))), *entry_ids)
     
     # Get worksheet images for this note
     worksheet_images = []
