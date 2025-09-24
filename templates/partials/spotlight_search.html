@@ -371,7 +371,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle keyboard navigation for search results
     function handleKeyboardNavigation(e) {
-        if (!spotlightSearch.classList.contains('show') || e.ctrlKey || e.metaKey) return;
+        if (!spotlightSearch.classList.contains('show')) return;
+        
+        // Handle Ctrl+Enter for opening in new tab
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            const activeElement = document.activeElement;
+            if (activeElement.classList.contains('result-item') && activeElement.dataset.href) {
+                e.preventDefault();
+                window.open(activeElement.dataset.href, '_blank');
+                return;
+            }
+        }
+        
+        // Skip other keyboard navigation if Ctrl or Meta key is pressed
+        if (e.ctrlKey || e.metaKey) return;
 
         const activeElement = document.activeElement;
         const results = Array.from(document.querySelectorAll('.result-item'));
