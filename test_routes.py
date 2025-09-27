@@ -1,6 +1,17 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
 from sql import SQL
 import random
+import openai
+from openai import OpenAI
+import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Initialize Blueprint
 test_bp = Blueprint('tests', __name__, url_prefix='/tests')
@@ -193,6 +204,110 @@ def generate_test(unit_number):
         print("="*50 + "\n")
         flash('Error generating test. Please check the server logs for details.', 'error')
         return redirect(url_for('dictionary.index'))
+
+@test_bp.route('/ai_test/<int:unit_number>')
+def ai_test(unit_number):
+    if not session.get("name"):
+        return redirect(url_for('auth.login', next=request.url))
+    
+    return render_template('tests/ai_test.html', unit_number=unit_number)
+
+@test_bp.route('/api/ai_test/start', methods=['POST'])
+def start_ai_test():
+    if not session.get("name"):
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    data = request.json
+    unit_number = data.get('unit_number')
+    
+    # Get all relevant content for context
+    dict_db = SQL("sqlite:///dictionary.db")
+    notes_db = SQL("sqlite:///notes.db")
+    
+    # Get dictionary entries
+    dictionary_entries = dict_db.execute("""
+        SELECT word_phrase, definition, example, unit_number
+        FROM entries 
+        WHERE unit_number = :unit_number
+    """, unit_number=unit_number)
+    
+    # Get notes
+    notes = notes_db.execute("""
+        SELECT title, content, unit_number
+        FROM notes
+        WHERE unit_number = :unit_number
+    """, unit_number=unit_number)
+    
+    # Format the context
+    context = ""
+    
+    if dictionary_entries:
+        context += "Dictionary Terms:\n"
+        for entry in dictionary_entries:
+            context += f"- {entry['word_phrase']}: {entry['definition']}"
+            if entry['example']:
+                context += f" (Example: {entry['example']})"
+            context += "\n"
+    
+    if notes:
+        context += "\nNotes:\n"
+        for note in notes:
+            context += f"- {note['title']}: {note['content']}\n"
+    
+    # Initial prompt for the AI
+    system_prompt = f"""You are a helpful AI tutor helping a law student study for their unit {unit_number} test. 
+    You have access to the following study materials:
+    {context}
+    
+    Your task is to:
+    1. Start with a friendly greeting and explain the test format
+    2. Ask one question at a time
+    3. Wait for the student's response
+    4. Provide feedback on their answer
+    5. Keep track of the score
+    6. At the end, provide a summary of the test results
+    
+    Make the questions challenging but fair, and provide helpful explanations.
+    """
+    
+    # Start the conversation
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "assistant", "content": "Hello! I'm your AI tutor. I'll be asking you questions based on your study materials. Let's begin with the first question..."}
+        ],
+        temperature=0.7
+    )
+    
+    return jsonify({
+        "messages": [
+            {"role": "assistant", "content": response.choices[0].message.content}
+        ]
+    })
+
+@test_bp.route('/api/ai_test/chat', methods=['POST'])
+def chat():
+    if not session.get("name"):
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    data = request.json
+    messages = data.get('messages', [])
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7
+        )
+        
+        return jsonify({
+            "messages": [
+                {"role": "assistant", "content": response.choices[0].message.content}
+            ]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def init_app(app):
     # Register the blueprint with the app
