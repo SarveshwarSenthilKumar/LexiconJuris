@@ -223,14 +223,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to send a message to the server
     async function sendMessage(message) {
+        // Disable input while processing
+        chatInput.disabled = true;
+        const sendButton = document.getElementById('send-button');
+        sendButton.disabled = true;
+        
         try {
             setTyping(true);
             
             // Add user message to conversation history
-            conversationHistory.push({
-                role: 'user',
-                content: message
-            });
+            const userMessage = { role: 'user', content: message };
+            conversationHistory.push(userMessage);
             
             // Add user message to chat
             addMessage('user', message);
@@ -241,11 +244,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
                     messages: conversationHistory
-                })
+                }),
+                credentials: 'same-origin'
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Network response was not ok');
+            }
             
             const data = await response.json();
             
@@ -253,20 +263,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error);
             }
             
-            // Add assistant's response to conversation history and chat
-            const assistantMessage = data.messages[0].content;
-            conversationHistory.push({
-                role: 'assistant',
-                content: assistantMessage
-            });
+            if (!data.messages || !Array.isArray(data.messages) || data.messages.length === 0) {
+                throw new Error('Invalid response format from server');
+            }
             
-            addMessage('assistant', assistantMessage);
+            // Add assistant's response to conversation history and chat
+            const assistantMessage = data.messages[0];
+            conversationHistory.push(assistantMessage);
+            addMessage('assistant', assistantMessage.content);
             
         } catch (error) {
-            console.error('Error:', error);
-            addMessage('assistant', 'Sorry, there was an error processing your request. Please try again.');
+            console.error('Chat error:', error);
+            const errorMessage = error.message || 'Sorry, there was an error processing your request. Please try again.';
+            addMessage('assistant', errorMessage);
+            
+            // Add error to conversation history
+            conversationHistory.push({
+                role: 'assistant',
+                content: errorMessage
+            });
         } finally {
             setTyping(false);
+            // Re-enable input
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.focus();
         }
     }
     
@@ -309,11 +330,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Handle form submission
-    chatForm.addEventListener('submit', function(e) {
+    chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const message = chatInput.value.trim();
         if (message) {
-            sendMessage(message);
+            await sendMessage(message);
+        }
+    });
+    
+    // Handle Enter key (but allow Shift+Enter for new line)
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
         }
     });
     
