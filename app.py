@@ -1,7 +1,7 @@
 
 from flask import Flask, render_template, request, redirect, session, jsonify, flash, url_for
 from flask_session import Session
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 import os
 import re
@@ -11,6 +11,7 @@ from auth import auth_blueprint
 from dictionary_routes import dict_bp as dictionary_blueprint
 from notes_routes import notes_bp as notes_blueprint
 from test_routes import test_bp as test_blueprint
+from calendar_routes import calendar_bp as calendar_blueprint
 
 app = Flask(__name__)
 
@@ -27,6 +28,7 @@ def init_blueprints(app):
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
     app.register_blueprint(dictionary_blueprint, url_prefix='/dictionary')
     app.register_blueprint(notes_blueprint, url_prefix='/notes')
+    app.register_blueprint(calendar_blueprint, url_prefix='/calendar')
     
     # Initialize test blueprint
     from test_routes import init_app as init_test_app
