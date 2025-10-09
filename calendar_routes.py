@@ -13,7 +13,7 @@ def get_calendar_db():
 @calendar_bp.route('/')
 def index():
     """Display the calendar view."""
-    if 'user_id' not in session:
+    if not session.get("name"):
         flash('Please log in to view the calendar.', 'error')
         return redirect(url_for('auth.login'))
     
