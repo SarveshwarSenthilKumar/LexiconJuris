@@ -39,7 +39,7 @@ def index():
         AND entry_date < :end_date
         ORDER BY entry_date
         """,
-        user_id=session['user_id'],
+        user_id=session.get("id"),
         start_date=start_date.isoformat(),
         end_date=end_date.isoformat()
     )
