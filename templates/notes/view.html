@@ -394,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </h1>
             
             <div class="note-meta">
+                <span>ID: {{ note.id }}</span>
                 {% if note.unit_number %}
                 <span>Unit {{ note.unit_number }}</span>
                 {% endif %}
