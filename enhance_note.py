@@ -155,18 +155,13 @@ def backup_notes():
 
 def main():
     parser = argparse.ArgumentParser(description='Enhance a single note using AI')
+    parser.add_argument('note_id', type=int, help='ID of the note to enhance')
     parser.add_argument('--preview', action='store_true', help='Show preview without saving changes')
     parser.add_argument('--comment', type=str, help='Additional instructions or context for the AI')
     args = parser.parse_args()
     
-    while True:
-        try:
-            note_id = int(input("🔍 Enter the ID of the note to enhance: "))
-            break
-        except ValueError:
-            print("❌ Please enter a valid numeric ID.")
-    
-    print(f"\n🔍 Fetching note with ID: {note_id}")
+    note_id = args.note_id
+    print(f"🔍 Fetching note with ID: {note_id}")
     note = get_note(note_id)
     
     if not note:
