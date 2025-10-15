@@ -43,8 +43,14 @@ def get_note(note_id):
     finally:
         conn.close()
 
-def enhance_note_content(title, content):
-    """Use Gemini to enhance the note content while preserving its structure."""
+def enhance_note_content(title, content, comment=None):
+    """Use Gemini to enhance the note content while preserving its structure.
+    
+    Args:
+        title (str): The title of the note
+        content (str): The current content of the note
+        comment (str, optional): Additional instructions or context for enhancement
+    """
     system_prompt = """
     You are a legal expert and educator. Your task is to enhance legal notes while preserving their structure and core concepts.
     For each note:
@@ -70,6 +76,10 @@ def enhance_note_content(title, content):
     
     try:
         # Combine system prompt and user content
+        instruction = "Please enhance this note while preserving its structure and key points.\n"
+        if comment:
+            instruction += f"\nAdditional Instructions: {comment}\n"
+        
         full_prompt = f"""{system_prompt}
         
         Title: {title}
@@ -77,7 +87,7 @@ def enhance_note_content(title, content):
         Current Content:
         {content}
         
-        Please enhance this note while preserving its structure and key points.
+        {instruction}
         Keep the original formatting and structure intact.
         """
         
@@ -146,6 +156,7 @@ def backup_notes():
 def main():
     parser = argparse.ArgumentParser(description='Enhance a single note using AI')
     parser.add_argument('--preview', action='store_true', help='Show preview without saving changes')
+    parser.add_argument('--comment', type=str, help='Additional instructions or context for the AI')
     args = parser.parse_args()
     
     while True:
@@ -171,7 +182,14 @@ def main():
             print("⚠️  Proceeding without backup")
     
     print("\n🤖 Enhancing note content...")
-    enhanced_content = enhance_note_content(note['title'], note['content'])
+    if args.comment:
+        print(f"  📝 Using comment: {args.comment}")
+    
+    enhanced_content = enhance_note_content(
+        note['title'], 
+        note['content'],
+        comment=args.comment
+    )
     
     if not enhanced_content:
         print("❌ Failed to enhance note")
