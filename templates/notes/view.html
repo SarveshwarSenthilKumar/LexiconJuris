@@ -200,11 +200,14 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('noteSearch');
-    const searchCount = document.getElementById('searchCount');
-    const noteContent = document.querySelector('.note-content');
+    // Handle note enhancement
+    document.addEventListener('DOMContentLoaded', function() {
+        const enhanceBtn = document.getElementById('enhanceNoteBtn');
+        const enhanceStatus = document.getElementById('enhanceStatus');
+        const enhanceIcon = document.getElementById('enhanceIcon');
+        const noteContent = document.querySelector('.note-content');
     
     if (!searchInput || !noteContent) return;
     
@@ -383,6 +386,17 @@ document.addEventListener('DOMContentLoaded', function() {
                           color: #e6f1ff; font-size: 0.9rem;">
             <span id="searchCount" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
                                        color: #8892b0; font-size: 0.8rem; pointer-events: none;"></span>
+        </div>
+    </div>
+    
+    <!-- Enhancement Controls -->
+    <div id="enhanceControls" style="margin-bottom: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+        <button id="enhanceNoteBtn" class="btn btn-primary" style="background: var(--primary); color: #0a192f; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+            <span id="enhanceIcon">✨</span> Enhance Note with AI
+        </button>
+        <div id="enhanceStatus" style="display: none; align-items: center; color: #50fa7b; font-size: 0.9rem;">
+            <span class="spinner-border spinner-border-sm" role="status" style="margin-right: 0.5rem;"></span>
+            <span>Enhancing note...</span>
         </div>
     </div>
     

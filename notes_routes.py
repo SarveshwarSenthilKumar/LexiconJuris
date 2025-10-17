@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
 from sql import SQL
 import sqlite3
 from datetime import datetime
@@ -6,6 +6,8 @@ import re
 import os
 import uuid
 from werkzeug.utils import secure_filename
+import subprocess
+import json
 
 # Configure upload folder and allowed extensions
 UPLOAD_FOLDER = os.path.join('uploads', 'worksheets')
@@ -432,6 +434,46 @@ def view_note(note_id):
                          content=processed_content,
                          related_entries=related_entries,
                          worksheet_images=worksheet_images)
+
+@notes_bp.route('/<int:note_id>/enhance', methods=['POST'])
+def enhance_note(note_id):
+    """Enhance a note using AI"""
+    try:
+        # Get the note from the database
+        db = SQL("sqlite:///notes.db")
+        note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
+        
+        if not note:
+            return jsonify({'success': False, 'message': 'Note not found'}), 404
+            
+        # Call the enhance_note.py script with the note ID
+        result = subprocess.run(
+            ['python', 'enhance_note.py', '--id', str(note_id)],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            return jsonify({
+                'success': False,
+                'message': 'Error enhancing note',
+                'error': result.stderr
+            }), 500
+            
+        # Get the updated note
+        updated_note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)[0]
+        
+        return jsonify({
+            'success': True,
+            'message': 'Note enhanced successfully',
+            'content': updated_note['content']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 def init_app(app):
     app.register_blueprint(notes_bp)
