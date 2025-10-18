@@ -446,22 +446,44 @@ def enhance_note(note_id):
         if not note:
             return jsonify({'success': False, 'message': 'Note not found'}), 404
             
+        # Get any additional instructions from the request
+        data = request.get_json()
+        comment = data.get('comment', '')
+        
+        # Build the command to run enhance_note.py
+        cmd = ['python', 'enhance_note.py', str(note_id)]
+        if comment:
+            cmd.extend(['--comment', f'"{comment}"'])
+        
         # Call the enhance_note.py script with the note ID
         result = subprocess.run(
-            ['python', 'enhance_note.py', '--id', str(note_id)],
+            cmd,
             capture_output=True,
-            text=True
+            text=True,
+            shell=True  # Required for Windows to handle quotes in arguments
         )
         
+        # Check for errors
         if result.returncode != 0:
+            error_msg = result.stderr or 'Unknown error occurred'
+            print(f"Error enhancing note {note_id}: {error_msg}")
             return jsonify({
                 'success': False,
                 'message': 'Error enhancing note',
-                'error': result.stderr
+                'error': error_msg
             }), 500
             
         # Get the updated note
-        updated_note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)[0]
+        updated_note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
+        
+        if not updated_note:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to retrieve updated note',
+                'error': 'Note not found after enhancement'
+            }), 500
+            
+        updated_note = updated_note[0]
         
         return jsonify({
             'success': True,
@@ -470,9 +492,11 @@ def enhance_note(note_id):
         })
         
     except Exception as e:
+        print(f"Unexpected error in enhance_note: {str(e)}")
         return jsonify({
             'success': False,
-            'message': str(e)
+            'message': 'An unexpected error occurred',
+            'error': str(e)
         }), 500
 
 def init_app(app):

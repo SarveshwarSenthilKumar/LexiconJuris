@@ -208,8 +208,76 @@
         const enhanceStatus = document.getElementById('enhanceStatus');
         const enhanceIcon = document.getElementById('enhanceIcon');
         const noteContent = document.querySelector('.note-content');
-    
-    if (!searchInput || !noteContent) return;
+        
+        if (!enhanceBtn || !noteContent) return;
+        
+        // Handle enhance button click
+        enhanceBtn.addEventListener('click', async function() {
+            if (enhanceBtn.disabled) return;
+            
+            try {
+                // Show loading state
+                enhanceBtn.disabled = true;
+                enhanceStatus.style.display = 'flex';
+                enhanceIcon.textContent = '⏳';
+                
+                // Get the note ID from the URL
+                const noteId = window.location.pathname.split('/').pop();
+                
+                // Call the enhance endpoint
+                const response = await fetch(`/notes/${noteId}/enhance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        comment: '' // You can add a comment here if needed
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update the note content
+                    noteContent.innerHTML = result.content;
+                    
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Note Enhanced',
+                        text: 'Your note has been enhanced with AI!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(result.error || result.message || 'Failed to enhance note');
+                }
+            } catch (error) {
+                console.error('Error enhancing note:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Failed to enhance note. Please try again.'
+                });
+            } finally {
+                // Reset button state
+                enhanceBtn.disabled = false;
+                enhanceStatus.style.display = 'none';
+                enhanceIcon.textContent = '✨';
+            }
+        });
+    });
+</script>
+
+<script>
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('noteSearch');
+        const searchCount = document.getElementById('searchCount');
+        const noteContent = document.querySelector('.note-content');
+        
+        if (!searchInput || !noteContent) return;
     
     // Store original content to reset highlights
     const originalContent = noteContent.innerHTML;
