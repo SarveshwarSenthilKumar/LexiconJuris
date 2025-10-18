@@ -450,53 +450,67 @@ def enhance_note(note_id):
         data = request.get_json()
         comment = data.get('comment', '')
         
-        # Build the command to run enhance_note.py
-        cmd = ['python', 'enhance_note.py', str(note_id)]
-        if comment:
-            cmd.extend(['--comment', f'"{comment}"'])
-        
-        # Call the enhance_note.py script with the note ID
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            shell=True  # Required for Windows to handle quotes in arguments
-        )
-        
-        # Check for errors
-        if result.returncode != 0:
-            error_msg = result.stderr or 'Unknown error occurred'
-            print(f"Error enhancing note {note_id}: {error_msg}")
+        try:
+            # Import the enhance_note module directly instead of using subprocess
+            import sys
+            import os
+            # Add the current directory to the path to ensure imports work
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from enhance_note import enhance_note_content, update_note
+            
+            # Get the note content
+            note_content = note[0]['content']
+            note_title = note[0]['title']
+            
+            # Enhance the note content
+            enhanced_content = enhance_note_content(note_title, note_content, comment)
+            
+            if not enhanced_content:
+                raise ValueError("Failed to enhance note content")
+                
+            # Update the note in the database
+            update_success = update_note(note_id, enhanced_content)
+            
+            if not update_success:
+                raise ValueError("Failed to update note in database")
+                
+            # Get the updated note to return
+            updated_note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
+            
+            if not updated_note:
+                raise ValueError("Failed to retrieve updated note")
+                
+            return jsonify({
+                'success': True,
+                'message': 'Note enhanced successfully',
+                'content': updated_note[0]['content']
+            })
+            
+        except Exception as e:
+            print(f"Error in enhance_note: {str(e)}")
+            # Try to get more detailed error information
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error details: {error_details}")
+            
             return jsonify({
                 'success': False,
                 'message': 'Error enhancing note',
-                'error': error_msg
+                'error': str(e),
+                'details': error_details if 'DEBUG' in os.environ else None
             }), 500
             
-        # Get the updated note
-        updated_note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
-        
-        if not updated_note:
-            return jsonify({
-                'success': False,
-                'message': 'Failed to retrieve updated note',
-                'error': 'Note not found after enhancement'
-            }), 500
-            
-        updated_note = updated_note[0]
-        
-        return jsonify({
-            'success': True,
-            'message': 'Note enhanced successfully',
-            'content': updated_note['content']
-        })
-        
     except Exception as e:
-        print(f"Unexpected error in enhance_note: {str(e)}")
+        print(f"Unexpected error in enhance_note route: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error details: {error_details}")
+        
         return jsonify({
             'success': False,
             'message': 'An unexpected error occurred',
-            'error': str(e)
+            'error': str(e),
+            'details': error_details if 'DEBUG' in os.environ else None
         }), 500
 
 def init_app(app):

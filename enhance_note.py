@@ -148,17 +148,21 @@ def backup_notes():
     try:
         shutil.copy2(db_path, backup_path)
         print(f"✅ Created backup at: {backup_path}")
-        return True
     except Exception as e:
         print(f"❌ Failed to create backup: {str(e)}")
         return False
 
 def main():
+    # This function is kept for backward compatibility
     parser = argparse.ArgumentParser(description='Enhance a single note using AI')
-    parser.add_argument('note_id', type=int, help='ID of the note to enhance')
+    parser.add_argument('note_id', type=int, nargs='?', help='ID of the note to enhance')
     parser.add_argument('--preview', action='store_true', help='Show preview without saving changes')
     parser.add_argument('--comment', type=str, help='Additional instructions or context for the AI')
     args = parser.parse_args()
+    
+    if not args.note_id:
+        print("❌ Note ID is required")
+        return 1
     
     note_id = args.note_id
     print(f"🔍 Fetching note with ID: {note_id}")
@@ -166,7 +170,7 @@ def main():
     
     if not note:
         print(f"❌ No note found with ID: {note_id}")
-        return
+        return 1
     
     print(f"📝 Note found: {note['title']}")
     
@@ -188,7 +192,7 @@ def main():
     
     if not enhanced_content:
         print("❌ Failed to enhance note")
-        return
+        return 1
     
     if args.preview:
         print("\n✨ Enhanced Content (Preview - not saved):")
@@ -199,8 +203,12 @@ def main():
     else:
         if update_note(note_id, enhanced_content):
             print("\n✅ Note enhanced successfully!")
+            return 0
         else:
-            print("\n❌ Failed to update note")
+            print("\n❌ Failed to update note in database")
+            return 1
+    
+    return 0
 
 if __name__ == "__main__":
     main()
