@@ -91,7 +91,10 @@ def index():
                strftime('%Y-%m-%d', last_updated) as last_updated,
                is_favorite, has_worksheet
         FROM notes 
-        ORDER BY last_updated DESC
+        ORDER BY 
+            CASE WHEN unit_number = '' OR unit_number IS NULL THEN 1 ELSE 0 END,
+            CAST(unit_number AS INTEGER) DESC,
+            last_updated DESC
     """)
     
     # Group notes by unit number for better organization
