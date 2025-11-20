@@ -466,10 +466,15 @@ def enhance_note(note_id):
             note_title = note[0]['title']
             
             # Enhance the note content
-            enhanced_content = enhance_note_content(note_title, note_content, comment)
-            
-            if not enhanced_content:
-                raise ValueError("Failed to enhance note content")
+            try:
+                enhanced_content = enhance_note_content(note_title, note_content, comment)
+                print(f"Debug: enhanced_content type: {type(enhanced_content)}, length: {len(enhanced_content) if enhanced_content else 'None'}")
+                
+                if not enhanced_content:
+                    raise ValueError("Failed to enhance note content - returned None or empty")
+            except Exception as enhance_error:
+                print(f"Debug: Error during enhancement: {str(enhance_error)}")
+                raise ValueError(f"Failed to enhance note content: {str(enhance_error)}")
                 
             # Update the note in the database
             update_success = update_note(note_id, enhanced_content)

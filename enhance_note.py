@@ -51,6 +51,15 @@ def enhance_note_content(title, content, comment=None):
         content (str): The current content of the note
         comment (str, optional): Additional instructions or context for enhancement
     """
+    # Validate inputs
+    if not title or not content:
+        print(f"  ❌ Invalid inputs: title={bool(title)}, content={bool(content)}")
+        return None
+    
+    # Check API key
+    if not GEMINI_API_KEY:
+        print("  ❌ GEMINI_API_KEY is not set")
+        return None
     system_prompt = """
     You are a legal expert and educator. Your task is to enhance legal notes while preserving their structure and core concepts.
     For each note:
@@ -93,6 +102,11 @@ def enhance_note_content(title, content, comment=None):
         
         print(f"  Processing with {model_name}...")
         
+        # Check if model is properly initialized
+        if not model:
+            print("  ❌ Model not properly initialized")
+            return None
+        
         response = model.generate_content(
             full_prompt,
             generation_config=genai.types.GenerationConfig(
@@ -109,7 +123,11 @@ def enhance_note_content(title, content, comment=None):
         return response.text.strip()
         
     except Exception as e:
-        print(f"  ❌ Error enhancing note: {str(e)}")
+        error_msg = f"  ❌ Error enhancing note: {str(e)}"
+        print(error_msg)
+        # Log the full exception for debugging
+        import traceback
+        print(f"  Full traceback: {traceback.format_exc()}")
         return None
 
 def update_note(note_id, enhanced_content):
