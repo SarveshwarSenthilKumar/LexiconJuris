@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify, current_app
 from sql import SQL
 import sqlite3
 from datetime import datetime
@@ -286,6 +286,110 @@ def get_note_content(note_id):
 def serve_worksheet(filename):
     """Serve uploaded worksheet files"""
     return send_from_directory(UPLOAD_FOLDER, filename)
+
+@notes_bp.route('/<int:note_id>/duplicate', methods=['POST'])
+def duplicate_note(note_id):
+    """Duplicate a note to a different unit"""
+    if not session.get("name"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    target_unit = data.get('target_unit')
+    include_worksheets = data.get('include_worksheets', True)
+    
+    if not target_unit:
+        return jsonify({"error": "Target unit is required"}), 400
+    
+    try:
+        # Get the original note
+        db = SQL("sqlite:///notes.db")
+        note = db.execute("SELECT * FROM notes WHERE id = :id", id=note_id)
+        
+        if not note:
+            return jsonify({"error": "Note not found"}), 404
+            
+        note = note[0]
+        
+        # Create a new note with the same content but different unit
+        new_note = {
+            'title': f"{note['title']} (Copy)",
+            'content': note['content'],
+            'unit_number': target_unit,
+            'tags': note.get('tags'),
+            'related_entries': note.get('related_entries'),
+            'comments': note.get('comments'),
+            'is_favorite': 0  # Reset favorite status
+        }
+        
+        # Insert the new note
+        conn = sqlite3.connect('notes.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO notes (title, content, unit_number, tags, related_entries, comments, is_favorite)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            new_note['title'],
+            new_note['content'],
+            new_note['unit_number'],
+            new_note['tags'],
+            new_note['related_entries'],
+            new_note['comments'],
+            new_note['is_favorite']
+        ))
+        
+        new_note_id = cursor.lastrowid
+        
+        # Handle worksheet images if requested
+        if include_worksheets and note.get('has_worksheet'):
+            # Get original worksheets
+            worksheets = db.execute("""
+                SELECT filename, original_filename 
+                FROM worksheet_images 
+                WHERE note_id = :note_id
+            """, note_id=note_id)
+            
+            # Copy worksheet files and create new records
+            for worksheet in worksheets:
+                original_path = os.path.join(UPLOAD_FOLDER, worksheet['filename'])
+                if os.path.exists(original_path):
+                    # Generate new filename to avoid conflicts
+                    file_ext = os.path.splitext(worksheet['filename'])[1]
+                    new_filename = f"{uuid.uuid4()}{file_ext}"
+                    new_path = os.path.join(UPLOAD_FOLDER, new_filename)
+                    
+                    # Copy the file
+                    import shutil
+                    shutil.copy2(original_path, new_path)
+                    
+                    # Create new worksheet record
+                    cursor.execute("""
+                        INSERT INTO worksheet_images (note_id, filename, original_filename)
+                        VALUES (?, ?, ?)
+                    """, (new_note_id, new_filename, worksheet['original_filename']))
+            
+            # Update has_worksheet flag
+            cursor.execute("""
+                UPDATE notes 
+                SET has_worksheet = 1 
+                WHERE id = ?
+            """, (new_note_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "new_note_id": new_note_id,
+            "message": "Note duplicated successfully"
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error duplicating note: {str(e)}")
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return jsonify({"error": f"Failed to duplicate note: {str(e)}"}), 500
 
 @notes_bp.route('/delete_worksheet/<int:worksheet_id>', methods=['POST'])
 def delete_worksheet(worksheet_id):
