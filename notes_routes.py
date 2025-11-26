@@ -287,6 +287,42 @@ def serve_worksheet(filename):
     """Serve uploaded worksheet files"""
     return send_from_directory(UPLOAD_FOLDER, filename)
 
+@notes_bp.route('/<int:note_id>/delete', methods=['POST'])
+def delete_note(note_id):
+    """Delete a note and its associated worksheets"""
+    if not session.get("name"):
+        flash('You must be logged in to delete notes', 'error')
+        return redirect(url_for('auth.login'))
+    
+    try:
+        db = SQL("sqlite:///notes.db")
+        
+        # First, delete any associated worksheet files and their database entries
+        worksheets = db.execute("""
+            SELECT filename FROM worksheet_images 
+            WHERE note_id = :note_id
+        """, note_id=note_id)
+        
+        # Delete the actual files
+        for worksheet in worksheets:
+            try:
+                file_path = os.path.join(UPLOAD_FOLDER, worksheet['filename'])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                current_app.logger.error(f"Error deleting worksheet file {worksheet['filename']}: {str(e)}")
+        
+        # Delete the note from the database
+        db.execute("DELETE FROM notes WHERE id = :note_id", note_id=note_id)
+        
+        flash('Note deleted successfully', 'success')
+        return redirect(url_for('notes.index'))
+        
+    except Exception as e:
+        current_app.logger.error(f"Error deleting note {note_id}: {str(e)}")
+        flash('An error occurred while deleting the note', 'error')
+        return redirect(url_for('notes.view_note', note_id=note_id))
+
 @notes_bp.route('/<int:note_id>/duplicate', methods=['POST'])
 def duplicate_note(note_id):
     """Duplicate a note to a different unit"""

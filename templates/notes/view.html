@@ -559,6 +559,9 @@
             <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#duplicateModal" style="margin-right: 0.5rem;">
                 <i class="fas fa-copy"></i> Duplicate to Unit
             </button>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" style="margin-right: 0.5rem;">
+                <i class="fas fa-trash"></i> Delete
+            </button>
             <a href="{{ url_for('notes.index') }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
                 Back to Notes
             </a>
@@ -595,6 +598,33 @@
                         <span id="duplicateSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                         Duplicate Note
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: #0a192f; color: #e6f1ff; border: 1px solid #ff4d4d;">
+                <div class="modal-header" style="border-bottom: 1px solid #ff4d4d;">
+                    <h5 class="modal-title" style="color: #ff4d4d;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Delete Note
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this note? This action cannot be undone.</p>
+                    <p class="mb-0"><strong>Note Title:</strong> {{ note.title }}</p>
+                    {% if note.unit_number %}<p><strong>Unit:</strong> {{ note.unit_number }}</p>{% endif %}
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #ff4d4d;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteForm" action="{{ url_for('notes.delete_note', note_id=note.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i> Delete Permanently
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
