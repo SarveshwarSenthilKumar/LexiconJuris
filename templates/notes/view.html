@@ -566,9 +566,16 @@
                 Back to Notes
             </a>
         </div>
+        {% else %}
+        <div class="actions" style="justify-content: flex-end;">
+            <a href="{{ url_for('notes.index') }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
+                Back to Notes
+            </a>
+        </div>
         {% endif %}
     </article>
 
+    {% if session.get("name") %}
     <!-- Duplicate Note Modal -->
     <div class="modal fade" id="duplicateModal" tabindex="-1" aria-labelledby="duplicateModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -629,6 +636,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <script>
