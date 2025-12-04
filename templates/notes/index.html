@@ -139,8 +139,8 @@
                                         <i class="fas fa-eye"></i> View
                                     </a>
                                     {% if session.get("name") %}
-                                    <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; background: transparent; border: 1px solid var(--primary);">
-                                        <i class="fas fa-edit"></i> Edit
+                                    <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn edit-btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--primary); color: var(--primary); transition: all 0.2s ease-in-out; margin-left: 0.5rem;">
+                                        <i class="fas fa-edit" style="margin-right: 4px;"></i> Edit
                                     </a>
                                     {% endif %}
                                 </div>
