@@ -11,6 +11,7 @@ A comprehensive web application for legal professionals and students to manage l
 - Advanced search with filtering options
 
 ### 2. Case Notes Management
+- (Work in Progress)
 - Create and organize case notes
 - Rich text formatting support
 - Tagging and categorization
