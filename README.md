@@ -1,49 +1,77 @@
 # LexiconJuris
 
-A comprehensive web application for legal professionals and students to manage legal terms, case notes, and case law references with advanced search capabilities and user authentication.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+A comprehensive web application for legal professionals and students to manage legal terms, case notes, and case law references with advanced search capabilities and user authentication. LexiconJuris streamlines legal research and case management through an intuitive interface and powerful search functionality.
 
-### 1. Legal Dictionary
+## ✨ Features
+
+### 📚 Legal Dictionary
 - Add, edit, and search legal terms and definitions
 - View entry history and related terms
 - Public and private entry views
 - Advanced search with filtering options
+- Bulk import/export functionality
+- Version history for each entry
 
-### 2. Case Notes Management
-- Create and organize case notes
-- Rich text formatting support
-- Tagging and categorization
-- Full-text search across all notes
+### 📝 Case Notes Management
+- Create and organize case notes with rich text formatting
+- Advanced text editor with formatting tools
+- Tagging and categorization system
+- Full-text search with highlighting
+- Note templates for common legal documents
+- Export notes to multiple formats (PDF, DOCX)
 
-### 3. Calendar Integration
+### 📅 Calendar Integration
 - Track important legal dates and deadlines
 - Set reminders for court dates and filings
-- View calendar by day, week, or month
+- Recurring events and custom reminders
+- Calendar views: day, week, month, agenda
+- Integration with external calendar services (coming soon)
+- Export calendar events
 
-### 4. User Authentication & Security
-- Secure user registration and login
-- Role-based access control
-- Session management
-- Password hashing with salt
+### 🔐 User Authentication & Security
+- Secure user registration and login system
+- Role-based access control (Admin, Attorney, Paralegal, Student)
+- Session management with configurable timeouts
+- Password hashing with bcrypt and salt
+- Account recovery options
+- Activity logging and audit trails
 
-## Tech Stack
+## 🛠 Tech Stack
 
 ### Backend
-- **Framework**: Flask (Python)
+- **Framework**: Flask (Python 3.8+)
 - **Database**: SQLite with SQLAlchemy ORM
-- **Authentication**: Custom authentication system with session management
-- **Templates**: Jinja2
+- **Authentication**: Custom JWT-based authentication
+- **API**: RESTful API endpoints
+- **Templates**: Jinja2 with template inheritance
+- **Background Tasks**: Celery (for future async tasks)
 
 ### Frontend
-- HTML5, CSS3, JavaScript
-- Responsive design
-- Interactive UI components
+- **Core**: HTML5, CSS3, JavaScript (ES6+)
+- **Styling**: Custom CSS with responsive design
+- **UI Components**: Custom-built components
+- **Form Handling**: Client-side validation
+- **AJAX**: For dynamic content loading
+
+### Development Tools
+- **Version Control**: Git
+- **Package Management**: pip
+- **Code Quality**: flake8, black
+- **Testing**: pytest, unittest
 
 ### Dependencies
-- See [requirements.txt](requirements.txt) for complete list
+See [requirements.txt](requirements.txt) for complete list of Python dependencies.
 
-## Installation
+## 🚀 Installation & Setup
+
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package manager)
+- Git
+
+### Local Development Setup
 
 1. **Clone the repository**
    ```bash
@@ -53,8 +81,13 @@ A comprehensive web application for legal professionals and students to manage l
 
 2. **Set up a virtual environment** (recommended)
    ```bash
+   # Windows
    python -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+   .\venv\Scripts\activate
+
+   # macOS/Linux
+   python3 -m venv venv
+   source venv/bin/activate
    ```
 
 3. **Install dependencies**
@@ -62,11 +95,16 @@ A comprehensive web application for legal professionals and students to manage l
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables**
-   Create a `.env` file in the root directory with the following variables:
-   ```
-   SECRET_KEY=your-secret-key-here
+4. **Configure environment variables**
+   Create a `.env` file in the root directory:
+   ```env
+   FLASK_APP=app.py
+   FLASK_ENV=development
+   SECRET_KEY=your-secure-secret-key-here
    DATABASE_URL=sqlite:///users.db
+   DICTIONARY_DB=sqlite:///dictionary.db
+   NOTES_DB=sqlite:///notes.db
+   CALENDAR_DB=sqlite:///calendar.db
    ```
 
 5. **Initialize the database**
@@ -75,30 +113,68 @@ A comprehensive web application for legal professionals and students to manage l
    python createDictDB.py
    python createNotesDB.py
    python createCalendarDB.py
+   python setup_fts.py  # Set up full-text search
    ```
 
-6. **Run the application**
+6. **Run database migrations** (if any)
    ```bash
-   python app.py
+   flask db upgrade
    ```
 
-7. **Access the application**
-   Open your web browser and navigate to `http://localhost:5000`
+7. **Create an admin user**
+   ```bash
+   python create_user.py --username admin --email admin@example.com --password yourpassword --role admin
+   ```
 
-## Project Structure
+8. **Run the development server**
+   ```bash
+   flask run
+   ```
+
+9. **Access the application**
+   Open your web browser and navigate to `http://localhost:5000`
+   - Admin dashboard: `http://localhost:5000/admin`
+   - API documentation: `http://localhost:5000/api/docs`
+
+## 📁 Project Structure
 
 ```
 LexiconJuris/
 ├── app.py                 # Main application entry point
 ├── requirements.txt       # Python dependencies
 ├── static/                # Static files (CSS, JS, images)
+│   ├── css/              # Stylesheets
+│   ├── js/               # JavaScript files
+│   └── img/              # Images and icons
+│
 ├── templates/             # HTML templates
-├── auth.py                # Authentication routes
-├── dictionary_routes.py   # Dictionary functionality
-├── notes_routes.py        # Notes management
-├── calendar_routes.py     # Calendar functionality
-├── sql.py                 # Database utilities
+│   ├── auth/             # Authentication templates
+│   ├── dictionary/       # Dictionary views
+│   ├── notes/            # Notes management
+│   ├── calendar/         # Calendar views
+│   └── layouts/          # Base templates
+│
+├── database/             # Database files
+│   ├── users.db         # User authentication data
+│   ├── dictionary.db    # Legal terms database
+│   ├── notes.db         # Case notes
+│   └── calendar.db      # Calendar events
+│
+├── migrations/           # Database migrations
+│
+├── tests/                # Test files
+│   ├── unit/            # Unit tests
+│   └── integration/     # Integration tests
+│
+├── auth.py               # Authentication routes and decorators
+├── dictionary_routes.py  # Legal dictionary functionality
+├── notes_routes.py       # Case notes management
+├── calendar_routes.py    # Calendar functionality
+├── sql.py               # Database utilities and models
+├── SarvAuth.py          # Custom authentication utilities
+├── create_user.py       # User management scripts
 ├── createDatabase.py      # Database initialization
+├── setup_fts.py         # Full-text search setup
 └── README.md              # This file
 ```
 
