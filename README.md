@@ -14,6 +14,7 @@ A comprehensive web application for legal professionals and students to manage l
 - Bulk import/export functionality
 - Version history for each entry
 
+<<<<<<< HEAD
 ### 📝 Case Notes Management
 - Create and organize case notes with rich text formatting
 - Advanced text editor with formatting tools
@@ -21,6 +22,14 @@ A comprehensive web application for legal professionals and students to manage l
 - Full-text search with highlighting
 - Note templates for common legal documents
 - Export notes to multiple formats (PDF, DOCX)
+=======
+### 2. Case Notes Management
+- (Work in Progress)
+- Create and organize case notes
+- Rich text formatting support
+- Tagging and categorization
+- Full-text search across all notes
+>>>>>>> 64567983bf6dc5b693700a5e237664c27d6cbaa4
 
 ### 📅 Calendar Integration
 - Track important legal dates and deadlines
