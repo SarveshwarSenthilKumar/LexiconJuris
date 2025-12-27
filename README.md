@@ -56,6 +56,7 @@ A comprehensive web application for legal professionals and students to manage l
 - **API**: RESTful API endpoints
 - **Templates**: Jinja2 with template inheritance
 - **Background Tasks**: Celery (for future async tasks)
+- **AI**: Google Gemini and OpenAI ChatGPT 
 
 ### Frontend
 - **Core**: HTML5, CSS3, JavaScript (ES6+)
