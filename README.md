@@ -14,7 +14,6 @@ A comprehensive web application for legal professionals and students to manage l
 - Bulk import/export functionality
 - Version history for each entry
 
-<<<<<<< HEAD
 ### 📝 Case Notes Management
 - Create and organize case notes with rich text formatting
 - Advanced text editor with formatting tools
@@ -22,14 +21,6 @@ A comprehensive web application for legal professionals and students to manage l
 - Full-text search with highlighting
 - Note templates for common legal documents
 - Export notes to multiple formats (PDF, DOCX)
-=======
-### 2. Case Notes Management
-- (Work in Progress)
-- Create and organize case notes
-- Rich text formatting support
-- Tagging and categorization
-- Full-text search across all notes
->>>>>>> 64567983bf6dc5b693700a5e237664c27d6cbaa4
 
 ### 📅 Calendar Integration
 - Track important legal dates and deadlines
@@ -73,6 +64,8 @@ A comprehensive web application for legal professionals and students to manage l
 
 ### Dependencies
 See [requirements.txt](requirements.txt) for complete list of Python dependencies.
+
+## 🎯 Getting Started
 
 ## 🚀 Installation & Setup
 
@@ -164,29 +157,56 @@ LexiconJuris/
 │   ├── calendar/         # Calendar views
 │   └── layouts/          # Base templates
 │
-├── database/             # Database files
-│   ├── users.db         # User authentication data
-│   ├── dictionary.db    # Legal terms database
-│   ├── notes.db         # Case notes
-│   └── calendar.db      # Calendar events
-│
-├── migrations/           # Database migrations
-│
-├── tests/                # Test files
-│   ├── unit/            # Unit tests
-│   └── integration/     # Integration tests
-│
-├── auth.py               # Authentication routes and decorators
-├── dictionary_routes.py  # Legal dictionary functionality
-├── notes_routes.py       # Case notes management
-├── calendar_routes.py    # Calendar functionality
-├── sql.py               # Database utilities and models
-├── SarvAuth.py          # Custom authentication utilities
-├── create_user.py       # User management scripts
-├── createDatabase.py      # Database initialization
-├── setup_fts.py         # Full-text search setup
-└── README.md              # This file
+├── *.db                  # SQLite database files
+├── *.py                  # Main application modules
+├── create_*.py           # Database initialization scripts
+└── README.md             # This file
 ```
+
+## 🌟 Features in Detail
+
+### Dictionary Features
+- **Comprehensive Legal Terms**: Extensive database of legal terminology
+- **Advanced Search**: Search by term, definition, or related concepts
+- **Version History**: Track changes to legal definitions over time
+- **Import/Export**: Bulk import terms or export your legal dictionary
+
+### Notes Management
+- **Rich Text Editing**: Full-featured editor for case notes
+- **Organization**: Categorize and tag notes for easy retrieval
+- **Templates**: Pre-built templates for common legal documents
+- **Search**: Full-text search across all your notes
+
+### Calendar Features
+- **Case Management**: Track important dates and deadlines
+- **Reminders**: Never miss a court date or filing deadline
+- **Multiple Views**: Day, week, month, and agenda views
+- **Export**: Sync with external calendar applications
+
+## 🔧 Development
+
+### Running Tests
+```bash
+python -m pytest tests/
+```
+
+### Code Style
+This project follows PEP 8 style guidelines. To check your code:
+```bash
+flake8 .
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## API Endpoints
 
