@@ -15,8 +15,8 @@ if not GEMINI_API_KEY:
 # Configure the API key
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Use Gemini 2.0 Flash-Lite
-model_name = 'gemini-2.0-flash-lite'
+# Use Gemini 2.5 Flash
+model_name = 'gemini-2.5-flash'
 print(f"Using model: {model_name}")
 model = genai.GenerativeModel(model_name)
 
