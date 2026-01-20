@@ -1,6 +1,6 @@
 # LexiconJuris
 
-> ⚠️ **DEPRECATION NOTICE**: This project is no longer actively maintained. For any inquiries or additional information, please contact the repository owner.
+> ⚠️ **DEPRECATION NOTICE**: This project is no longer actively maintained. For any inquiries or additional information, please contact the repository owner at sarveshwar313@gmail.com.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -8,7 +8,7 @@
 
 LexiconJuris is a specialized version of Lexicon, tailored specifically for legal professionals and students. It provides comprehensive tools for managing legal terms, case notes, and case law references with advanced search capabilities and user authentication. LexiconJuris streamlines legal research and case management through an intuitive interface and powerful search functionality.
 
-> ℹ️ **Note**: A generalized version of this application, called **Lexicon**, will be available soon for broader knowledge management use cases beyond the legal domain.
+> ℹ️ **Note**: A generalized version of this application will be available soon for broader knowledge management use cases beyond the legal domain.
 
 ## ✨ Features
 
