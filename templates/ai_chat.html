@@ -13,7 +13,7 @@
                 </div>
                 <div class="card-body">
                     <!-- Chat messages container -->
-                    <div id="chat-messages" class="mb-3" style="height: 60vh; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px;">
+                    <div id="chat-messages" class="mb-3" style="height: 60vh; overflow-y: auto; overflow-x: hidden; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px;">
                         <div class="text-center text-muted my-5" id="welcome-message">
                             <i class="fas fa-robot fa-3x mb-3"></i>
                             <h5>Welcome to your AI Study Assistant!</h5>
@@ -121,28 +121,50 @@
         }
         
         function addMessage(sender, text) {
+            // Create message container
             const messageDiv = document.createElement('div');
-            messageDiv.className = `mb-3 ${sender}-message`;
+            messageDiv.className = `mb-2 ${sender}-message`;
+            messageDiv.style.width = '100%';
+            messageDiv.style.display = 'block';
             
+            // Create message bubble
             const messageBubble = document.createElement('div');
-            messageBubble.className = `p-3 rounded-3 ${sender === 'user' ? 'bg-primary text-white ms-auto' : 'bg-light'}`;
-            messageBubble.style.maxWidth = '80%';
-            messageBubble.style.wordWrap = 'break-word';
+            messageBubble.className = `p-2 rounded-3 ${sender === 'user' ? 'bg-primary text-white ms-auto' : 'bg-light'}`;
+            messageBubble.style.maxWidth = '90%';
+            messageBubble.style.display = 'inline-block';
+            messageBubble.style.wordBreak = 'break-word';
+            messageBubble.style.whiteSpace = 'pre-wrap';
+            messageBubble.style.overflow = 'visible';
             
-            // Format the text with line breaks
-            const formattedText = text.replace(/\n/g, '<br>');
-            messageBubble.innerHTML = formattedText;
+            // Add text directly to the bubble
+            messageBubble.textContent = text;
             
             // Add icon based on sender
             const icon = document.createElement('i');
             icon.className = sender === 'user' ? 'fas fa-user me-2' : 'fas fa-robot me-2';
             messageBubble.prepend(icon);
             
+            // Add a small space after the message
+            const spacer = document.createElement('div');
+            spacer.style.height = '8px';
+            
             messageDiv.appendChild(messageBubble);
             chatMessages.appendChild(messageDiv);
             
-            // Scroll to the new message
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Scroll to the bottom
+            const scrollToBottom = () => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                // If we're not at the bottom, try again on the next frame
+                if (chatMessages.scrollTop < chatMessages.scrollHeight - chatMessages.clientHeight - 10) {
+                    requestAnimationFrame(scrollToBottom);
+                }
+            };
+            
+            // Initial scroll
+            scrollToBottom();
+            
+            // Additional scroll after a short delay to catch any async rendering
+            setTimeout(scrollToBottom, 100);
         }
     });
 </script>
