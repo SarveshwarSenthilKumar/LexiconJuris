@@ -89,7 +89,7 @@ def chat():
                 system_prompt + "\n\nUser: " + user_message + "\nAssistant:",
                 generation_config={
                     "temperature": 0.7,
-                    "max_output_tokens": 20000,  # Increased from 1000 to 20000 for longer responses
+                    "max_output_tokens": 80000,  # Increased from 1000 to 80000 for longer responses
                 }
             )
             
