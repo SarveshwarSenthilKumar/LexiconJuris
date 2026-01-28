@@ -6,3 +6,4 @@ update readme and add everything done so far
 fix the enhance note button
 add a clause to prompt to say dont say these are your new ai enhanced notes
 fix United Nations note
+fix all new international law notes
