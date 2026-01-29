@@ -1,6 +1,6 @@
 # LexiconJuris
 
-> ⚠️ **DEPRECATION NOTICE**: This project is no longer actively maintained. For any inquiries or additional information, please contact the repository owner at sarveshwar313@gmail.com.
+> ⚠️ **DEPRECATION NOTICE**: This project is no longer actively maintained as of January 29th, 2026. For any inquiries or additional information, please contact the repository owner at sarveshwar313@gmail.com.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
