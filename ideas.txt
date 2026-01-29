@@ -9,3 +9,6 @@ fix United Nations note
 fix all new international law notes
 Fix philosophers note
 go back and check notes for cut issues
+
+---
+Officially completed note-taking phase as of January 28th, 2025. Now focusing on template development and UI/UX improvements.
