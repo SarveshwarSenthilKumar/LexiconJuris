@@ -5,6 +5,7 @@ from datetime import datetime, date
 import pytz
 import os
 import re
+from dotenv import load_dotenv
 from sql import *  # Used for database connection and management
 from SarvAuth import *  # Used for user authentication functions
 from auth import auth_blueprint
@@ -14,7 +15,16 @@ from test_routes import test_bp as test_blueprint
 from calendar_routes import calendar_bp as calendar_blueprint
 from ai_routes import ai_bp as ai_blueprint
 
+# Load environment variables from .env file
+load_dotenv()
+
 app = Flask(__name__)
+
+# Test route to verify environment variables
+@app.route('/test-env')
+def test_env():
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    return f"GEMINI_API_KEY is set: {'Yes' if gemini_key else 'No'}"
 
 # Configure session
 app.config["SESSION_PERMANENT"] = True
