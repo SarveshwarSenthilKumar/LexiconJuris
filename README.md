@@ -8,7 +8,7 @@
 
 > ⚖️ **Legal Disclaimer**: Please be aware that legal information and case law referenced in this repository may become outdated over time. Laws and legal interpretations change frequently, and it is the user's responsibility to verify the current state of the law. Always consult with a qualified legal professional for the most up-to-date legal advice and information.
 
-## 🏛️ Specialized Legal Version
+## 🏛️ Specialized Legal Version of NOTES PLATFORM (to be developed)
 
 LexiconJuris is a specialized version of Lexicon, tailored specifically for legal professionals and students. It provides comprehensive tools for managing legal terms, case notes, and case law references with advanced search capabilities and user authentication. LexiconJuris streamlines legal research and case management through an intuitive interface and powerful search functionality.
 
